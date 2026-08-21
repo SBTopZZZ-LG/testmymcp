@@ -58,6 +58,40 @@ node dist/cli/index.js --help
 If you install from a fork, replace `SBTopZZZ-LG` in the `github:` specs with your own
 GitHub username/org.
 
+## Skill
+
+The repo ships an agent skill at `skills/testmymcp/SKILL.md` — a detailed cheatsheet for using
+this CLI (commands, test levels, sessions, output formats, gotchas). It lives in the repo so it
+travels with the code.
+
+### Clone the repo (skill included)
+
+Cloning the repo gives you both the code and the skill:
+
+```sh
+git clone git@github.com:SBTopZZZ-LG/testmymcp.git
+# the skill is at skills/testmymcp/SKILL.md
+```
+
+### Install the skill into your agent's skills directory
+
+To make the skill loadable by your agent (e.g. Kilo's `~/.agents/skills/`), copy the skill
+folder there:
+
+```sh
+# GitHub — install straight into an agent skills dir
+git clone git@github.com:SBTopZZZ-LG/testmymcp.git /tmp/testmymcp
+mkdir -p ~/.agents/skills
+cp -R /tmp/testmymcp/skills/testmymcp ~/.agents/skills/
+
+# or, if you already have the repo cloned
+cp -R skills/testmymcp ~/.agents/skills/
+```
+
+Replace `~/.agents/skills/` with whatever skills directory your agent/editor reads from (e.g.
+Kilo can also use a project-local `skills/` directory). Each skill is self-contained in its own
+`<name>/SKILL.md` folder, so more skills can be added under `skills/` later.
+
 ## Usage
 
 ### One-shot run
