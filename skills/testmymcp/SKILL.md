@@ -185,6 +185,15 @@ Top-level keys: `tool`, `schemaVersion`, `meta`, `summary`, `tests`, `errors`, `
 - `tests[]` — `id`, `category`, `level`, `status`, `severity`, `durationMs`, `transport`, plus
   failure detail on fails.
 
+**Compact mode for CI/agents:** add `--json-summary` to drop the embedded per-test payloads
+(`evidence`/`request`/`response`) — the fields that balloon the report when a tool returns
+multi-MB results — while keeping status, layer, error, warnings, and `summary`. Available on
+`stdio`, `http` and `test`:
+
+```sh
+testmymcp stdio "npx s" --json --json-summary
+```
+
 ## Exit codes
 
 - `0` — no failures.
@@ -211,6 +220,10 @@ e2e harness (`tests/e2e/manifest/scenarios.json`) declares per-scenario expected
   one yields HTTP 431 — use a body-only `big_echo` tool for large payload round-trips.
 - Modern servers must return `MCP-Protocol-Version: 2026-07-28` (not the legacy default) or
   header routing fails.
+- A server response line over the configured cap (`--max-line-size`, default 16 MiB) cannot be
+  framed: pending requests fail **fast** as per-test transport errors carrying the byte count —
+  a bounded failure, not a hang. If a tool legitimately returns multi-MB results (e.g. a symbol
+  table), raise `--max-line-size`; use `--json-summary` so the payload doesn't bloat the report.
 
 ## Development
 
