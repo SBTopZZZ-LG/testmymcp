@@ -148,19 +148,25 @@ results, roots client-request coverage, read/completion pagination.
 
 **Phase 6 — Polish.** JUnit reporter, CI docs, extension-registry expansion, `inspect trace.json`.
 
-### Active / next target (not a numbered phase; see Plane board)
-- **User-managed persistent sessions** (`session create/list/show/dispose`). Decouple connections
-  from single CLI invocations: the user creates a session (config supplied), a local store
-  persists it, later commands reuse it by a stable id, and `dispose` tears it down (indirectly
-  revoking it). One-shot runs with an explicit config must still work (reuse is optional). Store
-  must never write secrets in plaintext (reuse redaction). Backlog of work; may lead to a larger
-  architectural change (e.g. turning the CLI into a long-running local server) if pursued.
+### Completed: user-managed persistent sessions (see Plane board)
+- **User-managed persistent sessions** — *done.* `session create/list/show/dispose` + `test <id>`
+  in `src/sessions/` (types, file store, shared runner) backed by a `.testmymcp/sessions.json`
+  store with stable config-hash ids. One-shot `stdio`/`http` keep working (reuse is optional) and
+  now share the same runner. Bearer tokens are never written (only the auth mode + a
+  `requiresToken` flag); secret-looking env values are stored as a sentinel and re-supplied via
+  `--env` on `test`.
+- **Env-aware stdio spawns** — *done.* Repeatable `--env KEY=VALUE` on `stdio`, `session create`,
+  and `test <id>` (e.g. `PLANE_API_KEY`, `PLANE_BASE_URL`), merged over the current environment
+  for the child; sensitive key names are redacted at rest. This is how env-configured MCP servers
+  (Plane, Linear, etc.) are tested without wrapper scripts.
 
 ### Known edge case (backlog, normal priority)
 - **Servers that revoke access on disconnect** (OAuth/OTP/bank-grade MCPs). The tool is
   per-invocation and always closes the connection after a command, so it cannot satisfy servers
   that revoke on ANY close. Addressed only if/when worth the architectural cost (e.g. a local
-  daemon holding connections open, or a full OAuth client with refresh-token persistence).
+  daemon holding connections open, or a full OAuth client with refresh-token persistence). Note:
+  the sessions feature intentionally does NOT keep a live socket open across commands — it
+  reconnects from the persisted config — so this edge case remains the path to a real daemon.
 
 ---
 
