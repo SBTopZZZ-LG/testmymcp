@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "description": "E2E coverage manifest for testmymcp unhappy-path (client-robustness) scenarios.",
+  "scenarios": {
+    "crash-on-start": {
+      "description": "Server exits with a non-zero code immediately on startup. The client must report the crash and not hang.",
+      "fixture": "unhappy/crash-on-start.js",
+      "era": "legacy",
+      "transport": "stdio",
+      "noHang": true,
+      "expectations": {
+        "connect spawn": { "status": "fail", "layer": "transport", "required": true },
+        "connect stdout-garbage": { "status": "fail", "layer": "transport", "required": false },
+        "protocol process-alive": { "status": "fail", "layer": "transport", "required": true }
+      }
+    },
+    "hang-stdio": {
+      "description": "Server never responds. The client must time out per-request (bounded), never hang forever.",
+      "fixture": "unhappy/hang-stdio.js",
+      "era": "legacy",
+      "transport": "stdio",
+      "options": { "connectTimeoutMs": 1200, "requestTimeoutMs": 1200, "defaultTimeoutMs": 4000 },
+      "noHang": true,
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true },
+        "protocol initialize": { "status": "fail", "layer": "protocol", "required": true }
+      }
+    },
+    "garbage-stdout": {
+      "description": "Server emits non-JSON on stdout on startup and before every response while serving normally. Client must flag the framing violation and continue (not hang).",
+      "fixture": "unhappy/garbage-stdout.js",
+      "era": "legacy",
+      "transport": "stdio",
+      "noHang": true,
+      "expectations": {
+        "connect stdout-garbage": { "status": "fail", "layer": "transport", "required": true },
+        "protocol stdout-framing": { "status": "fail", "layer": "transport", "required": true }
+      }
+    },
+    "malformed-frames": {
+      "description": "Server returns contradictory JSON-RPC (both result and error) on every request. The client cannot classify it, so it must time the request out (bounded), not hang.",
+      "fixture": "unhappy/malformed-frames.js",
+      "era": "legacy",
+      "transport": "stdio",
+      "options": { "connectTimeoutMs": 1000, "requestTimeoutMs": 1000, "defaultTimeoutMs": 4000 },
+      "noHang": true,
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true },
+        "protocol initialize": { "status": "fail", "layer": "protocol", "required": true }
+      }
+    },
+    "oversize-line": {
+      "description": "Server emits an oversize line; client must flag the framing/line-size while still serving.",
+      "fixture": "unhappy/oversize-line.js",
+      "era": "legacy",
+      "transport": "stdio",
+      "maxLineBytes": 1048576,
+      "noHang": true,
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true },
+        "protocol initialize": { "status": "pass", "required": true },
+        "protocol stdout-framing": { "status": "fail", "layer": "transport", "required": true },
+        "protocol line-size": { "status": "warn", "required": false }
+      }
+    },
+    "dies-mid-run": {
+      "description": "Server dies part-way through a session. Client must degrade gracefully and never hang.",
+      "fixture": "unhappy/dies-mid-run.js",
+      "era": "legacy",
+      "transport": "stdio",
+      "noHang": true,
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true },
+        "protocol initialize": { "status": "pass", "required": true }
+      }
+    },
+    "slow-init": {
+      "description": "Slow initialize response. With a short client deadline the client must time out cleanly, not hang.",
+      "fixture": "unhappy/slow-init.js",
+      "era": "legacy",
+      "transport": "stdio",
+      "options": { "connectTimeoutMs": 300, "requestTimeoutMs": 300, "defaultTimeoutMs": 3000 },
+      "noHang": true,
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true },
+        "protocol initialize": { "status": "fail", "layer": "protocol", "required": true }
+      }
+    },
+    "wrong-method-header": {
+      "description": "Server reports a wrong Mcp-Method response header. Transport header-routing must record a mismatch.",
+      "fixture": "unhappy/wrong-method-header.js",
+      "era": "legacy",
+      "transport": "streamable-http",
+      "noHang": true,
+      "transportHeaderIssues": "any",
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true }
+      }
+    },
+    "missing-session-id": {
+      "description": "Server never returns Mcp-Session-Id. Client must not establish a session but must not hang.",
+      "fixture": "unhappy/missing-session-id.js",
+      "era": "legacy",
+      "transport": "streamable-http",
+      "noHang": true,
+      "transportSessionId": "undefined",
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true }
+      }
+    },
+    "bad-protocol-version": {
+      "description": "Server advertises an unknown MCP-Protocol-Version header. Transport must record a version mismatch.",
+      "fixture": "unhappy/bad-protocol-version.js",
+      "era": "legacy",
+      "transport": "streamable-http",
+      "noHang": true,
+      "transportHeaderIssues": "any",
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true }
+      }
+    },
+    "app-error": {
+      "description": "A valid tool always returns an application error (isError). Must be reported as a tool/application failure, not a transport failure.",
+      "fixture": "unhappy/app-error.js",
+      "era": "legacy",
+      "transport": "streamable-http",
+      "noHang": true,
+      "expectations": {
+        "connect spawn": { "status": "pass", "required": true },
+        "tools/call fail_tool": { "status": "warn", "required": true }
+      }
+    },
+    "unsupported-version": {
+      "description": "Modern server rejects every request with -32022. Client must surface a protocol-level failure.",
+      "fixture": "unhappy/unsupported-version.js",
+      "era": "modern",
+      "transport": "streamable-http",
+      "noHang": true,
+      "expectations": {
+        "protocol discover": { "status": "fail", "layer": "protocol", "required": true }
+      }
+    },
+    "requires-capability": {
+      "description": "Modern server demands an unadvertised capability (-32021) on non-discover methods. Client must surface a protocol-level failure.",
+      "fixture": "unhappy/requires-capability.js",
+      "era": "modern",
+      "transport": "streamable-http",
+      "noHang": true,
+      "expectations": {
+        "protocol discover": { "status": "pass", "required": true },
+        "tools/list": { "status": "fail", "layer": "protocol", "required": true }
+      }
+    }
+  }
+}

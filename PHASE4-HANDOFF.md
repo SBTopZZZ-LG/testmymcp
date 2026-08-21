@@ -76,12 +76,29 @@ avoids mirroring a 256 KiB payload into an HTTP header (which would 431).
 - `tests/integration/engine-shutdown.test.ts` — graceful shutdown + logging notification.
 - Updated `tests/integration/engine-modern.test.ts` tool-list assertion to include `big_echo`.
 
+### 1.9 E2E unhappy-path fixture set + scenario manifest (first tranche)
+- **Shared fixture helpers** (`tests/fixtures/helpers/http.js`, `tests/fixtures/helpers/stdio.js`)
+  — tiny ESM building blocks (argsOf, response headers, JSON/SSE send, `sessionHandler` for
+  sessionful legacy HTTP, `onLine` for stdio) so single-purpose fixtures stay ~20–60 lines.
+- **Dedicated unhappy fixtures** (`tests/fixtures/unhappy/`): `crash-on-start`, `hang-stdio`,
+  `garbage-stdout`, `malformed-frames`, `oversize-line`, `dies-mid-run`, `slow-init`,
+  `wrong-method-header`, `missing-session-id`, `bad-protocol-version`, `app-error`,
+  `unsupported-version`, `requires-capability`.
+- **Scenario manifest** (`tests/e2e/manifest/scenarios.json`) — declares each scenario's
+  fixture, era, transport, options, and expected per-test-id outcome. Expectations carry a
+  `required: true|false` flag (omitted → optional/convenience). Scenario-level invariants:
+  `noHang` (no `engine overall-timeout`), `transportHeaderIssues`, `transportSessionId`. This is
+  the declare-once/assert-everywhere contract CI diffs against.
+- **E2E runner + test** (`tests/e2e/run-scenario.ts`, `tests/e2e/scenarios.test.ts`) — starts
+  each fixture, runs the engine (level Robustness by default), and asserts every manifest
+  expectation + invariant. 13 scenarios pass.
+
 ## 2. Verification
 ```
 npm run typecheck            OK
 npm run lint                 OK
 npm run build                OK
-npm test                     212/212 (36 files)
+npm test                     225/225 (37 files)
 CLI smoke:
   http --era modern --protocol-version 2026-07-28 --level 5
                              OK  0 fail (behavioral 6/6, robustness 4/4; 262 KiB payload round-trip)
@@ -95,12 +112,26 @@ These BLUEPRINT Phase 4 areas are not yet implemented (noted for a follow-up pas
 - **Roots client-request handling** (adapter answers `roots/list` during MRTR, but no fixture
   exercises a server-side roots capability against it).
 - Pagination is honored as a follow-cursor utility, but list **reads** with cursors
-  (`resources/read` pagination, `completion` pagination) are not covered.
+  (`resources/read` pagination, `completion` pagination) are not covered. The next e2e tranche
+  covers the **happy-path** matrix (versions × transports × capabilities) on top of this
+  manifest.
 
-## 4. Notable behavioral finding
-Header-annotated tool parameters (`x-mcp-header`) that carry large or binary values are
-mirrored into `Mcp-Param-*` HTTP headers. Sending a 256 KiB value through such a parameter
-produces HTTP 431 (`Request Header Fields Too Large`) from Node's HTTP server. The robustness
-suite intentionally routes payload round-trips through a body-only echo tool (`big_echo`) to
-avoid this footgun, and it is worth calling out to server authors: keep `x-mcp-header`
-parameters small.
+## 4. Notable behavioral findings
+1. **Header-annotated tool parameters** (`x-mcp-header`) that carry large or binary values are
+   mirrored into `Mcp-Param-*` HTTP headers. Sending a 256 KiB value through such a parameter
+   produces HTTP 431 (`Request Header Fields Too Large`) from Node's HTTP server. The robustness
+   suite intentionally routes payload round-trips through a body-only echo tool (`big_echo`) to
+   avoid this footgun, and it is worth calling out to server authors: keep `x-mcp-header`
+   parameters small.
+2. **Unhandled-rejection leak on send failure (fixed this tranche):** in both
+   `LegacyProtocolAdapter.rawRequest` and `ModernProtocolAdapter.sendRequest`, when `send()`
+   failed (e.g. transport already closed), `mux.failById(id, err)` rejected the registered mux
+   promise that was never awaited, producing an unhandled rejection. Both now
+   `await registered.catch(() => {})` before rethrowing.
+3. **Contradictory/oversize response classification:** a JSON-RPC response carrying both
+   `result` and `error` (or neither) is not a valid response (`isResponse` requires exactly one),
+   so the client ignores it and the request times out. The `malformed-frames` and
+   `garbage-stdout` scenarios confirm the client stays bounded (times out) rather than hanging.
+4. **Engine discards suite results on overall timeout:** if the whole run exceeds
+   `defaultTimeoutMs`, `engine.run()` returns only `[engine overall-timeout]`, dropping any
+   findings already collected. Worth a follow-up to emit the timeout as an *additional* result.

@@ -253,6 +253,7 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
         await this.send(request);
       } catch (error) {
         this.mux.failById(request.id, error instanceof Error ? error : new Error(String(error)));
+        await registered.catch(() => {});
         throw error;
       }
       const response = await registered;
