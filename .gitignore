@@ -6,6 +6,9 @@ coverage/
 .env
 .env.*
 
+# Local user state (persisted sessions)
+.testmymcp/
+
 # Phase 3 spec source (cloned, gitignored)
 spec-src/
 

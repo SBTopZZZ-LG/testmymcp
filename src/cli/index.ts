@@ -1,44 +1,10 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { runInspect } from './inspect.js';
+import { registerSessionCommands } from './session.js';
 import { runStdio, type StdioCommandOptions } from './stdio.js';
-import { runHttp, type HttpCommandOptions, type HttpTransportKind } from './http.js';
-import type { ToolExecutionMode } from '../core/tools/safety.js';
-import { isProtocolVersion, type ProtocolEra, type ProtocolVersion } from '../core/types/protocol.js';
-
-function parseLevel(value: string): number {
-  const parsed = Number.parseInt(value, 10);
-  if (Number.isNaN(parsed) || parsed < 0 || parsed > 7) {
-    throw new Error(`invalid level "${value}" (expected 0-7)`);
-  }
-  return parsed;
-}
-
-function parseMode(value: string): ToolExecutionMode {
-  if (value === 'safe' || value === 'readonly' || value === 'all') return value;
-  throw new Error(`invalid mode "${value}" (expected safe, readonly or all)`);
-}
-
-function parseEra(value: string): ProtocolEra {
-  if (value === 'legacy' || value === 'modern') return value;
-  throw new Error(`invalid era "${value}" (expected legacy or modern)`);
-}
-
-function parseProtocolVersion(value: string): ProtocolVersion {
-  if (!isProtocolVersion(value)) throw new Error(`invalid protocol version "${value}"`);
-  return value;
-}
-
-function parseHttpTransport(value: string): HttpTransportKind {
-  if (value === 'streamable-http' || value === 'legacy-sse') return value;
-  throw new Error(`invalid transport "${value}" (expected streamable-http or legacy-sse)`);
-}
-
-function parseHttpAccept(value: string | undefined): 'json' | 'sse' | undefined {
-  if (value === undefined) return undefined;
-  if (value === 'json' || value === 'sse') return value;
-  throw new Error(`invalid accept "${value}" (expected json or sse)`);
-}
+import { runHttp, type HttpCommandOptions } from './http.js';
+import { parseLevel, parseMode, parseEra, parseProtocolVersion, parseHttpTransport, parseHttpAccept } from './parse.js';
 
 const program = new Command();
 
@@ -135,5 +101,7 @@ program
     console.error('testmymcp: the security scanner ships in Phase 5 of the build plan (see BLUEPRINT.md).');
     process.exitCode = 2;
   });
+
+registerSessionCommands(program);
 
 program.parseAsync(process.argv);
