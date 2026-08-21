@@ -75,8 +75,10 @@ git clone git@github.com:SBTopZZZ-LG/testmymcp.git
 
 ### Install the skill into your agent's skills directory
 
-To make the skill loadable by your agent (e.g. Kilo's `~/.agents/skills/`), copy the skill
-folder there:
+To make the skill loadable by your agent, copy (or symlink) the skill folder into your agent's
+skills directory. `~/.agents/skills/` is a common, tool-agnostic convention shared by many
+agent tools — if your tool uses a different path (e.g. `~/.config/<tool>/skills/`, a
+project-local `skills/`, or an editor plugin dir), substitute it below.
 
 ```sh
 # GitHub — install straight into an agent skills dir
@@ -88,9 +90,17 @@ cp -R /tmp/testmymcp/skills/testmymcp ~/.agents/skills/
 cp -R skills/testmymcp ~/.agents/skills/
 ```
 
-Replace `~/.agents/skills/` with whatever skills directory your agent/editor reads from (e.g.
-Kilo can also use a project-local `skills/` directory). Each skill is self-contained in its own
-`<name>/SKILL.md` folder, so more skills can be added under `skills/` later.
+Some tools resolve skills from a canonical `~/.agents/skills/` and want a **symlink** from the
+tool-specific directory back to the canonical location, so one copy is shared across tools
+instead of duplicated:
+
+```sh
+# keep a single source of truth in the canonical skills dir, symlink it tool-specifically
+ln -s ~/.agents/skills/testmymcp ~/.config/<tool>/skills/testmymcp
+```
+
+Each skill is self-contained in its own `<name>/SKILL.md` folder, so more skills can be added
+under `skills/` later.
 
 ## Usage
 
