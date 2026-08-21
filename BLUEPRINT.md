@@ -139,16 +139,15 @@ disconnect-after-kill). Opt-in fixture flags (`--paginate`, `--log-on-call`) add
 shared fixture helpers (`tests/fixtures/helpers`), dedicated single-purpose unhappy fixtures
 (`tests/fixtures/unhappy`), and a declarative scenario manifest + runner
 (`tests/e2e/manifest/scenarios.json`, `run-scenario.ts`, `scenarios.test.ts`) asserting per-test
-outcomes with required/optional flags and no-hang invariants. CI added
-(`.github/workflows/ci.yml`, ubuntu node 20/22; `verify-windows` intentionally disabled to cut
-cost). *§14–§16, §24, §26, §34, §37–§41.* Deferred: streaming/backpressure measurement, progress
-results, roots client-request coverage, read/completion pagination.
+outcomes with required/optional flags and no-hang invariants. CI added (`.github/workflows/ci.yml`)
+running the verify chain. *§14–§16, §24, §26, §34, §37–§41.* Deferred: streaming/backpressure
+measurement, progress results, roots client-request coverage, read/completion pagination.
 
 **Phase 5 — Security & fuzzing.** `testmymcp scan` (injection/agent-safety), HTTP security (TLS, SSRF, decompression bombs, huge responses), malformed-protocol fuzz tier (opt-in, Level 7). *§31, §32, §8 malformed, §46 L6–7.*
 
 **Phase 6 — Polish.** JUnit reporter, CI docs, extension-registry expansion, `inspect trace.json`.
 
-### Completed: user-managed persistent sessions (see Plane board)
+### Completed: user-managed persistent sessions
 - **User-managed persistent sessions** — *done.* `session create/list/show/dispose` + `test <id>`
   in `src/sessions/` (types, file store, shared runner) backed by a `.testmymcp/sessions.json`
   store with stable config-hash ids. One-shot `stdio`/`http` keep working (reuse is optional) and
@@ -156,9 +155,9 @@ results, roots client-request coverage, read/completion pagination.
   `requiresToken` flag); secret-looking env values are stored as a sentinel and re-supplied via
   `--env` on `test`.
 - **Env-aware stdio spawns** — *done.* Repeatable `--env KEY=VALUE` on `stdio`, `session create`,
-  and `test <id>` (e.g. `PLANE_API_KEY`, `PLANE_BASE_URL`), merged over the current environment
-  for the child; sensitive key names are redacted at rest. This is how env-configured MCP servers
-  (Plane, Linear, etc.) are tested without wrapper scripts.
+  and `test <id>`, merged over the current environment for the child; sensitive key names are
+  redacted at rest. This is how env-configured MCP servers (API keys, base URLs) are tested
+  without wrapper scripts.
 
 ### Known edge case (backlog, normal priority)
 - **Servers that revoke access on disconnect** (OAuth/OTP/bank-grade MCPs). The tool is
