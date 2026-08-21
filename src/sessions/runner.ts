@@ -54,6 +54,7 @@ export function buildSession(target: SessionTarget, options: BuildSessionOptions
       command: target.command,
       maxLineBytes: target.maxLineBytes ?? DEFAULT_MAX_LINE_BYTES,
       shutdownTimeoutMs,
+      env: target.env,
     });
     const era = target.era ?? 'legacy';
     const adapter = protocolAdapterFactory.create(era, {

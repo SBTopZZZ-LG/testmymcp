@@ -15,6 +15,7 @@ export interface StdioCommandOptions {
   maxLineBytes?: number;
   preferVersion?: ProtocolVersion;
   era?: ProtocolEra;
+  env?: Record<string, string>;
   extensions?: Record<string, unknown>;
 }
 
@@ -27,6 +28,7 @@ export async function runStdio(options: StdioCommandOptions): Promise<number> {
     era: options.era,
     version: options.preferVersion,
     maxLineBytes: options.maxLineBytes,
+    env: options.env,
   };
 
   const { results, meta } = await runTarget(target, {

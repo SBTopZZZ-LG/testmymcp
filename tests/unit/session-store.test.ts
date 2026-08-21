@@ -80,6 +80,7 @@ describe('SessionStore', () => {
         lastUsedAt: 1,
         target: { transport: 'stdio', command: 'node fake.js' },
         requiresToken: false,
+        requiresSecretEnv: false,
         serverName: 'fake',
       };
       await store.create(record);
@@ -104,13 +105,14 @@ describe('SessionStore', () => {
         httpTransport: 'streamable-http',
         auth: { mode: 'bearer', token: 'super-secret-bearer-token' },
       };
-      const { target, requiresToken } = sanitizeToStoredTarget(http);
+      const { target, requiresToken, requiresSecretEnv } = sanitizeToStoredTarget(http);
       await store.create({
         id: deriveSessionId(http),
         createdAt: 0,
         lastUsedAt: 0,
         target,
         requiresToken,
+        requiresSecretEnv,
       });
       const raw = await readFile(file, 'utf8');
       expect(raw).not.toContain('super-secret-bearer-token');
@@ -128,6 +130,7 @@ describe('SessionStore', () => {
         lastUsedAt: 1,
         target: { transport: 'stdio', command: 'node fake.js' },
         requiresToken: false,
+        requiresSecretEnv: false,
       });
       await store.touch('stdio-x');
       const reopened = new SessionStore(file);
@@ -148,6 +151,7 @@ describe('SessionStore', () => {
         lastUsedAt: 0,
         target: { transport: 'stdio', command: 'node a.js' },
         requiresToken: false,
+        requiresSecretEnv: false,
       });
       expect((await store.remove('one'))?.id).toBe('stdio-1');
       expect(await store.get('stdio-1')).toBeUndefined();

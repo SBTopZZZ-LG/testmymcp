@@ -1,6 +1,7 @@
 import type { ProtocolEra, ProtocolVersion } from '../core/types/protocol.js';
 import type { AuthConfig } from '../transports/http/types.js';
 import type { StreamableHttpAccept } from '../transports/http/streamable-http-transport.js';
+import { sanitizeEnvForStore, expandStoredEnv } from './env.js';
 
 export type HttpTransportKind = 'streamable-http' | 'legacy-sse';
 
@@ -16,6 +17,8 @@ export type SessionTarget =
       era?: ProtocolEra;
       version?: ProtocolVersion;
       maxLineBytes?: number;
+      /** Env vars merged over the current process environment for the child. */
+      env?: Record<string, string>;
     }
   | {
       transport: 'http';
@@ -30,7 +33,8 @@ export type SessionTarget =
 /**
  * The serialized, on-disk form of a target. The bearer token (if any) is never
  * written; only its mode is kept, alongside a `requiresToken` flag so a later
- * `test <id>` knows to ask for the token again.
+ * `test <id>` knows to ask for the token again. Env vars are kept but secret
+ * values are replaced by a sentinel (see `SECRET_ENV_SENTINEL`).
  */
 export type StoredTarget =
   | {
@@ -39,6 +43,7 @@ export type StoredTarget =
       era?: ProtocolEra;
       version?: ProtocolVersion;
       maxLineBytes?: number;
+      env?: Record<string, string>;
     }
   | {
       transport: 'http';
@@ -57,14 +62,20 @@ export interface StoredSession {
   lastUsedAt: number;
   target: StoredTarget;
   requiresToken: boolean;
+  requiresSecretEnv: boolean;
   serverName?: string;
   serverVersion?: string;
   protocolVersion?: string;
   note?: string;
 }
 
-export function sanitizeToStoredTarget(target: SessionTarget): { target: StoredTarget; requiresToken: boolean } {
+export function sanitizeToStoredTarget(target: SessionTarget): {
+  target: StoredTarget;
+  requiresToken: boolean;
+  requiresSecretEnv: boolean;
+} {
   if (target.transport === 'stdio') {
+    const { env, requiresSecretEnv } = sanitizeEnvForStore(target.env);
     return {
       target: {
         transport: 'stdio',
@@ -72,8 +83,10 @@ export function sanitizeToStoredTarget(target: SessionTarget): { target: StoredT
         era: target.era,
         version: target.version,
         maxLineBytes: target.maxLineBytes,
+        env,
       },
       requiresToken: false,
+      requiresSecretEnv,
     };
   }
   const requiresToken = target.auth?.mode === 'bearer' && target.auth.token !== undefined;
@@ -88,10 +101,15 @@ export function sanitizeToStoredTarget(target: SessionTarget): { target: StoredT
       accept: target.accept,
     },
     requiresToken,
+    requiresSecretEnv: false,
   };
 }
 
-export function expandStoredTarget(stored: StoredTarget, token?: string): SessionTarget {
+export function expandStoredTarget(
+  stored: StoredTarget,
+  token?: string,
+  secretEnv?: Record<string, string>,
+): SessionTarget {
   if (stored.transport === 'stdio') {
     return {
       transport: 'stdio',
@@ -99,6 +117,7 @@ export function expandStoredTarget(stored: StoredTarget, token?: string): Sessio
       era: stored.era,
       version: stored.version,
       maxLineBytes: stored.maxLineBytes,
+      env: expandStoredEnv(stored.env, secretEnv),
     };
   }
   return {
@@ -111,3 +130,4 @@ export function expandStoredTarget(stored: StoredTarget, token?: string): Sessio
     accept: stored.accept,
   };
 }
+

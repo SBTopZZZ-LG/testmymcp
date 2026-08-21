@@ -102,13 +102,15 @@ describe('session reuse via store + runTarget', () => {
       const store = new SessionStore(file);
       const target: SessionTarget = { transport: 'stdio', command: stdioCommand() };
       const id = deriveSessionId(target);
-      const { target: stored, requiresToken } = sanitizeToStoredTarget(target);
+      const { target: stored, requiresToken, requiresSecretEnv } = sanitizeToStoredTarget(target);
+      expect(requiresSecretEnv).toBe(false);
       await store.create({
         id,
         createdAt: 0,
         lastUsedAt: 0,
         target: stored,
         requiresToken,
+        requiresSecretEnv,
       });
 
       const reopened = new SessionStore(file);
@@ -145,11 +147,12 @@ describe('session reuse via store + runTarget', () => {
         auth: { mode: 'bearer', token },
       };
       const id = deriveSessionId(target);
-      const { target: stored, requiresToken } = sanitizeToStoredTarget(target);
+      const { target: stored, requiresToken, requiresSecretEnv } = sanitizeToStoredTarget(target);
       expect(requiresToken).toBe(true);
+      expect(requiresSecretEnv).toBe(false);
 
       const store = new SessionStore(file);
-      await store.create({ id, createdAt: 0, lastUsedAt: 0, target: stored, requiresToken });
+      await store.create({ id, createdAt: 0, lastUsedAt: 0, target: stored, requiresToken, requiresSecretEnv });
 
       const raw = await readFile(file, 'utf8');
       expect(raw).not.toContain(token);

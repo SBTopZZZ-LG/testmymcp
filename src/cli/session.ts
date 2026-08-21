@@ -6,7 +6,24 @@ import { SessionStore, deriveSessionId } from '../sessions/index.js';
 import { probeTarget, runTarget } from '../sessions/index.js';
 import type { SessionTarget, StoredSession } from '../sessions/index.js';
 import { expandStoredTarget, sanitizeToStoredTarget } from '../sessions/index.js';
+import { parseEnvEntries } from '../sessions/env.js';
 import { parseEra, parseHttpAccept, parseHttpTransport, parseLevel, parseMode, parseProtocolVersion } from './parse.js';
+
+interface SessionCommandOptions extends Record<string, string | string[] | undefined> {
+  transport?: string;
+  name?: string;
+  era?: string;
+  protocolVersion?: string;
+  token?: string;
+  env?: string[];
+  accept?: string;
+  maxLineSize?: string;
+  timeout?: string;
+  mode?: string;
+  level?: string;
+  json?: string;
+  showSecrets?: string;
+}
 
 function describeTarget(session: StoredSession): string {
   if (session.target.transport === 'stdio') return `stdio: ${session.target.command}`;
@@ -30,6 +47,7 @@ export function registerSessionCommands(program: Command): void {
     .option('--era <era>', 'protocol era: legacy or modern')
     .option('--protocol-version <version>', 'preferred protocol version (e.g. 2026-07-28)')
     .option('--token <token>', 'bearer token for Authorization header')
+    .option('--env <key=value>', 'env var for a stdio server child (repeatable)', collectEnv, [])
     .option('--accept <format>', 'HTTP response format to request (json or sse)')
     .option('--max-line-size <bytes>', 'maximum server output line size in bytes', '1048576')
     .option('--timeout <ms>', 'connection/initialize timeout in milliseconds', '30000')
@@ -58,11 +76,16 @@ export function registerSessionCommands(program: Command): void {
     .option('--json', 'emit a machine-readable JSON report')
     .option('--timeout <ms>', 'overall test timeout in milliseconds', '30000')
     .option('--token <token>', 'bearer token to use with the persisted session')
+    .option('--env <key=value>', 'secret env var for a stdio child (repeatable)', collectEnv, [])
     .option('--show-secrets', 'disable redaction of sensitive values in traces')
     .action(testAction);
 }
 
-async function createAction(targetArg: string, commandOptions: Record<string, string>): Promise<void> {
+function collectEnv(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
+async function createAction(targetArg: string, commandOptions: SessionCommandOptions): Promise<void> {
   try {
     const store = new SessionStore();
     const era = commandOptions.era !== undefined ? parseEra(commandOptions.era) : undefined;
@@ -79,6 +102,7 @@ async function createAction(targetArg: string, commandOptions: Record<string, st
         era,
         version,
         maxLineBytes: Number.parseInt(commandOptions.maxLineSize ?? '1048576', 10) || undefined,
+        env: parseEnvEntries(commandOptions.env),
       };
     } else {
       const httpTransport = parseHttpTransport(transportArg);
@@ -98,7 +122,7 @@ async function createAction(targetArg: string, commandOptions: Record<string, st
     }
 
     const id = deriveSessionId(target);
-    const { target: storedTarget, requiresToken } = sanitizeToStoredTarget(target);
+    const { target: storedTarget, requiresToken, requiresSecretEnv } = sanitizeToStoredTarget(target);
 
     if (name !== undefined) {
       const existing = (await store.list(false)).find((session) => session.name === name && session.id !== id);
@@ -128,6 +152,7 @@ async function createAction(targetArg: string, commandOptions: Record<string, st
       lastUsedAt: now,
       target: storedTarget,
       requiresToken,
+      requiresSecretEnv,
       serverName: negotiated.serverInfo.name,
       serverVersion: negotiated.serverInfo.version,
       protocolVersion: negotiated.protocolVersion,
@@ -140,6 +165,7 @@ async function createAction(targetArg: string, commandOptions: Record<string, st
     if (record.serverName !== undefined) console.log(`  server: ${record.serverName} ${record.serverVersion ?? ''}`.trim());
     if (record.protocolVersion !== undefined) console.log(`  protocol: ${record.protocolVersion}`);
     if (record.requiresToken) console.log('  note: bearer token required; pass --token on `test`');
+    if (record.requiresSecretEnv) console.log('  note: secret env vars redacted; pass --env KEY=... on `test`');
   } catch (error) {
     console.error(`testmymcp: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 2;
@@ -203,7 +229,7 @@ async function disposeAction(idOrName: string): Promise<void> {
   }
 }
 
-async function testAction(idOrName: string, commandOptions: Record<string, string>): Promise<void> {
+async function testAction(idOrName: string, commandOptions: SessionCommandOptions): Promise<void> {
   try {
     const store = new SessionStore();
     const session = await store.get(idOrName);
@@ -214,13 +240,14 @@ async function testAction(idOrName: string, commandOptions: Record<string, strin
     }
 
     const token = commandOptions.token !== undefined ? commandOptions.token : undefined;
+    const secretEnv = parseEnvEntries(commandOptions.env);
     if (session.requiresToken && token === undefined) {
       console.error(`testmymcp: session ${session.id} requires a bearer token; pass --token`);
       process.exitCode = 2;
       return;
     }
 
-    const target = expandStoredTarget(session.target, token);
+    const target = expandStoredTarget(session.target, token, secretEnv);
     await store.touch(session.id).catch(() => undefined);
 
     const { results, meta } = await runTarget(target, {

@@ -9,6 +9,8 @@ export interface StdioTransportOptions {
   command: string;
   maxLineBytes?: number;
   shutdownTimeoutMs?: number;
+  /** Env vars merged over the current process environment for the child. */
+  env?: Record<string, string>;
 }
 
 export class StdioTransport implements Transport {
@@ -53,6 +55,7 @@ export class StdioTransport implements Transport {
       shell: spec.shell,
       detached: process.platform !== 'win32',
       stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, ...this.options.env },
     });
     this.child = child;
     this.reader = new NdjsonReader({

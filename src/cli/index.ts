@@ -5,6 +5,11 @@ import { registerSessionCommands } from './session.js';
 import { runStdio, type StdioCommandOptions } from './stdio.js';
 import { runHttp, type HttpCommandOptions } from './http.js';
 import { parseLevel, parseMode, parseEra, parseProtocolVersion, parseHttpTransport, parseHttpAccept } from './parse.js';
+import { parseEnvEntries } from '../sessions/env.js';
+
+function collectEnv(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
 
 const program = new Command();
 
@@ -32,7 +37,8 @@ program
   .option('--protocol-version <version>', 'preferred protocol version (e.g. 2026-07-28)')
   .option('--max-schema-size <bytes>', 'maximum tool schema size in bytes', '1048576')
   .option('--max-line-size <bytes>', 'maximum accepted server output line size in bytes', '1048576')
-  .action(async (command: string, commandOptions: Record<string, string>) => {
+  .option('--env <key=value>', 'env var for the server child (repeatable)', collectEnv, [])
+  .action(async (command: string, commandOptions: Record<string, string> & { env?: string[] }) => {
     try {
       const options: StdioCommandOptions = {
         command,
@@ -43,6 +49,7 @@ program
         showSecrets: Boolean(commandOptions.showSecrets),
         era: parseEra(commandOptions.era ?? 'legacy'),
         preferVersion: commandOptions.protocolVersion !== undefined ? parseProtocolVersion(commandOptions.protocolVersion) : undefined,
+        env: parseEnvEntries(commandOptions.env ?? []),
         maxSchemaBytes:
           commandOptions.maxSchemaSize !== undefined
             ? Number.parseInt(commandOptions.maxSchemaSize, 10) || undefined
