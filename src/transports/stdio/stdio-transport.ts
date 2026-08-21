@@ -149,7 +149,19 @@ export class StdioTransport implements Transport {
 
   private waitForExit(ms: number): Promise<void> {
     const child = this.child;
-    if (child === undefined || this.lastExit !== null) return Promise.resolve();
+    // Node records exitCode/signalCode synchronously when the process dies,
+    // even if the async 'exit' event has not reached our listener yet. On
+    // Windows a fast-crashing child can exit before that listener fires,
+    // leaving lastExit null; without this check stop() would burn the whole
+    // grace period waiting for an event that already happened.
+    if (
+      child === undefined ||
+      this.lastExit !== null ||
+      child.exitCode !== null ||
+      child.signalCode !== null
+    ) {
+      return Promise.resolve();
+    }
     return new Promise<void>((resolve) => {
       const timer = setTimeout(resolve, ms);
       child.once('exit', () => {
