@@ -10,20 +10,26 @@ import { type RunOptions, defaultRunOptions } from '../../src/engine/options.js'
 import { StdioTransport } from '../../src/transports/stdio/index.js';
 
 const fixturePath = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/fake-server.js');
+const bigResultFixturePath = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../fixtures/unhappy/big-tool-result.js',
+);
 
 interface RunOutcome {
   results: TestResult[];
   shared: SharedDiscovery;
 }
 
-async function runCommand(
-  flagArgs = '',
+async function runEngine(
+  command: string,
   options: Partial<RunOptions> = {},
   adapterInitTimeoutMs = 5000,
+  maxLineBytes?: number,
 ): Promise<RunOutcome> {
   const transport = new StdioTransport({
-    command: `node "${fixturePath}" ${flagArgs}`.trim(),
+    command,
     shutdownTimeoutMs: 5000,
+    maxLineBytes,
   });
   const runOptions = defaultRunOptions({
     mode: 'safe',
@@ -45,6 +51,20 @@ async function runCommand(
   } finally {
     await engine.dispose();
   }
+}
+
+async function runCommand(
+  flagArgs = '',
+  options: Partial<RunOptions> = {},
+  adapterInitTimeoutMs = 5000,
+  maxLineBytes?: number,
+): Promise<RunOutcome> {
+  return runEngine(
+    `node "${fixturePath}" ${flagArgs}`.trim(),
+    options,
+    adapterInitTimeoutMs,
+    maxLineBytes,
+  );
 }
 
 function ids(results: TestResult[]): string[] {
@@ -107,5 +127,54 @@ describe('engine integration over a real stdio process', () => {
   it('invokes destructive tools when the mode allows it', async () => {
     const { results } = await runCommand('', { mode: 'all' });
     expect(byId(results, 'tools/call delete_file')?.status).toBe('pass');
+  });
+
+  it('fails a tool fast with a byte-level transport error when its result exceeds the line cap', async () => {
+    // 1 MiB cap, but the get_symbols result is ~6 MB serialized. Before the
+    // fix the oversized line was silently dropped and the call hung until the
+    // overall timeout discarded every result (0 pass, "engine overall-timeout"
+    // only). Now it must fail per-test and keep testing.
+    const { results } = await runEngine(
+      `node "${bigResultFixturePath}"`,
+      { mode: 'all', defaultTimeoutMs: 20000, requestTimeoutMs: 20000 },
+      5000,
+      1024 * 1024,
+    );
+
+    expect(byId(results, 'engine overall-timeout')).toBeUndefined();
+    const call = byId(results, 'tools/call get_symbols');
+    expect(call).toBeDefined();
+    expect(call?.status).toBe('fail');
+    expect(call?.error?.layer).toBe('transport');
+    expect(call?.error?.message).toMatch(/line-size limit \(\d+ bytes\)/);
+    // Testing continued past the oversized call: connectivity results remain.
+    expect(byId(results, 'connect spawn')?.status).toBe('pass');
+  });
+
+  it('passes a large tool result under the default (16 MiB) line cap', async () => {
+    const { results } = await runEngine(
+      `node "${bigResultFixturePath}"`,
+      { mode: 'all' },
+      5000,
+      undefined,
+    );
+
+    expect(byId(results, 'engine overall-timeout')).toBeUndefined();
+    expect(byId(results, 'tools/call get_symbols')?.status).toBe('pass');
+  });
+
+  it('preserves already-collected results when the overall deadline fires', async () => {
+    // The hang fixture never responds, and requestTimeoutMs exceeds the overall
+    // budget, so the engine must time out globally — but keep the connectivity
+    // results it collected before the hang instead of returning only
+    // "engine overall-timeout".
+    const { results } = await runCommand('--hang', {
+      defaultTimeoutMs: 800,
+      requestTimeoutMs: 30000,
+      connectTimeoutMs: 3000,
+    });
+    expect(byId(results, 'engine overall-timeout')).toBeDefined();
+    expect(results.length).toBeGreaterThan(1);
+    expect(byId(results, 'connect spawn')?.status).toBe('pass');
   });
 });

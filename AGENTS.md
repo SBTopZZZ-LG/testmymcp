@@ -44,8 +44,13 @@ npm test
   manifest (see `tests/e2e/`).
 - **`isResponse` requires exactly one of `result`/`error`** (`src/core/jsonrpc/messages.ts`); a
   frame with both (or neither) is ignored → request times out (bounded, not a hang). Emitting a
-  garbage/oversize line makes the client force an overall `/hang`-style timeout that **discards
-  already-collected suite results** (`engine.run()` returns only `[engine overall-timeout]`).
+  garbage line makes the client record `connect stdout-garbage` / `protocol stdout-framing`.
+  An **oversize line** (over `maxLineBytes`) cannot be framed: `engine.onOversize` now fails all
+  pending multiplexer requests immediately with a byte-count error (per-test failure, no hang),
+  and a global `/hang`-style overall timeout **preserves already-collected results** — it appends
+  `engine overall-timeout` instead of discarding the suite output. Default `maxLineBytes` is
+  16 MiB (1 MiB historically); update all three defaults together (runner + `cli/index.ts` +
+  `cli/session.ts`, all `16777216`).
 - **`x-mcp-header` annotated params are mirrored into `Mcp-Param-*` HTTP headers**; a large value
   through such a param yields HTTP 431. For payload round-trips use a body-only echo tool
   (`big_echo`), never a header-annotated param.

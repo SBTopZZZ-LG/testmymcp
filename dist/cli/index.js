@@ -31,7 +31,7 @@ program
     .option('--era <era>', 'protocol era: legacy or modern', 'legacy')
     .option('--protocol-version <version>', 'preferred protocol version (e.g. 2026-07-28)')
     .option('--max-schema-size <bytes>', 'maximum tool schema size in bytes', '1048576')
-    .option('--max-line-size <bytes>', 'maximum accepted server output line size in bytes', '1048576')
+    .option('--max-line-size <bytes>', 'maximum accepted server output line size in bytes', '16777216')
     .option('--env <key=value>', 'env var for the server child (repeatable)', collectEnv, [])
     .action(async (command, commandOptions) => {
     try {

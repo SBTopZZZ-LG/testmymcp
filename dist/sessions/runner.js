@@ -4,7 +4,7 @@ import { TestEngine } from '../engine/engine.js';
 import { defaultRunOptions } from '../engine/options.js';
 import { LegacySseTransport, StreamableHttpTransport } from '../transports/http/index.js';
 import { StdioTransport } from '../transports/stdio/index.js';
-const DEFAULT_MAX_LINE_BYTES = 1024 * 1024;
+const DEFAULT_MAX_LINE_BYTES = 16 * 1024 * 1024;
 const SHUTDOWN_TIMEOUT_MS = 5000;
 const INIT_TIMEOUT_MS = 15_000;
 export function buildSession(target, options) {

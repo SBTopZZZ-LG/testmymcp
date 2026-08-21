@@ -19,9 +19,9 @@ export class TestEngine {
     async run() {
         const { adapter, transport, options, trace } = this.setup;
         transport.observer = this.buildObserver(adapter, transport, trace);
-        let results = [];
+        const results = [];
         try {
-            results = await withDeadline({ kind: 'test', ms: options.defaultTimeoutMs }, () => this.runInternal());
+            await withDeadline({ kind: 'test', ms: options.defaultTimeoutMs }, () => this.runInto(results));
         }
         catch (error) {
             if (error instanceof TimeoutError) {
@@ -39,16 +39,15 @@ export class TestEngine {
     async dispose() {
         await this.setup.adapter.shutdown();
     }
-    async runInternal() {
+    async runInto(results) {
         const { adapter, transport, options } = this.setup;
-        const results = [];
         const connectedAt = this.clock();
         try {
             await withDeadline({ kind: 'connect', ms: options.connectTimeoutMs ?? options.defaultTimeoutMs }, () => adapter.connect());
         }
         catch (error) {
             results.push(buildConnectFailure(error, this.clock() - connectedAt, transport.kind));
-            return results;
+            return;
         }
         const suites = selectSuites(options.maxLevel);
         for (const suite of suites) {
@@ -64,7 +63,6 @@ export class TestEngine {
                 }));
             }
         }
-        return results;
     }
     buildObserver(adapter, transport, trace) {
         return {
@@ -124,6 +122,10 @@ export class TestEngine {
                     raw: info.line.slice(0, 200),
                     timestamp: this.clock(),
                 });
+                // An oversized line cannot be framed, so any in-flight response is
+                // unrecoverable. Fail pending requests immediately (like onExit) with
+                // the byte count, instead of leaving them to hang until timeout.
+                adapter.mux.failAll(new Error(`server response line exceeded the configured line-size limit (${info.bytes} bytes) and was dropped`));
             },
         };
     }

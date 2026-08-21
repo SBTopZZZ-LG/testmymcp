@@ -18,7 +18,7 @@ export declare class TestEngine {
     constructor(setup: EngineSetup);
     run(): Promise<TestResult[]>;
     dispose(): Promise<void>;
-    private runInternal;
+    private runInto;
     private buildObserver;
     private ctx;
 }

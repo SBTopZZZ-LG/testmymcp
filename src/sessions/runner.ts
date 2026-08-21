@@ -12,7 +12,7 @@ import { StdioTransport } from '../transports/stdio/index.js';
 import type { Transport } from '../transports/transport.js';
 import type { SessionTarget } from './types.js';
 
-const DEFAULT_MAX_LINE_BYTES = 1024 * 1024;
+const DEFAULT_MAX_LINE_BYTES = 16 * 1024 * 1024;
 const SHUTDOWN_TIMEOUT_MS = 5000;
 const INIT_TIMEOUT_MS = 15_000;
 

@@ -57,7 +57,7 @@ export function registerSessionCommands(program: Command): void {
     .option('--token <token>', 'bearer token for Authorization header')
     .option('--env <key=value>', 'env var for a stdio server child (repeatable)', collectEnv, [])
     .option('--accept <format>', 'HTTP response format to request (json or sse)')
-    .option('--max-line-size <bytes>', 'maximum server output line size in bytes', '1048576')
+    .option('--max-line-size <bytes>', 'maximum server output line size in bytes', '16777216')
     .option('--timeout <ms>', 'connection/initialize timeout in milliseconds', '30000')
     .action(createAction);
 
@@ -112,7 +112,7 @@ async function createAction(
         command: targetArg,
         era,
         version,
-        maxLineBytes: Number.parseInt(commandOptions.maxLineSize ?? '1048576', 10) || undefined,
+        maxLineBytes: Number.parseInt(commandOptions.maxLineSize ?? '16777216', 10) || undefined,
         env: parseEnvEntries(commandOptions.env),
       };
     } else {

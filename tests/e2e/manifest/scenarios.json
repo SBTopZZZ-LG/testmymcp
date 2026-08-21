@@ -50,7 +50,7 @@
       }
     },
     "oversize-line": {
-      "description": "Server emits an oversize line; client must flag the framing/line-size while still serving.",
+      "description": "Server emits an oversize line after initialize; client must flag the framing/line-size while still serving.",
       "fixture": "unhappy/oversize-line.js",
       "era": "legacy",
       "transport": "stdio",
