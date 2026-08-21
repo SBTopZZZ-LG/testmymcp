@@ -46,15 +46,15 @@ dependencies copied correctly), so it works on every platform/npm version:
 
 ```sh
 # latest release
-npm install -g https://github.com/SBTopZZZ-LG/testmymcp/releases/latest/download/testmymcp-0.1.0.tgz
+npm install -g https://github.com/SBTopZZZ-LG/testmymcp/releases/latest/download/testmymcp-1.0.0.tgz
 
 # a specific release (URL is pinned to that version's tag)
-npm install -g https://github.com/SBTopZZZ-LG/testmymcp/releases/download/v0.1.0/testmymcp-0.1.0.tgz
+npm install -g https://github.com/SBTopZZZ-LG/testmymcp/releases/download/v1.0.0/testmymcp-1.0.0.tgz
 ```
 
 ```sh
 # or download the tarball and install it locally
-curl -L -o testmymcp.tgz https://github.com/SBTopZZZ-LG/testmymcp/releases/latest/download/testmymcp-0.1.0.tgz
+curl -L -o testmymcp.tgz https://github.com/SBTopZZZ-LG/testmymcp/releases/latest/download/testmymcp-1.0.0.tgz
 npm install -g ./testmymcp.tgz
 ```
 
