@@ -38,6 +38,26 @@ ready `testmymcp` command.
 > npm install -g testmymcp-<version>.tgz
 > ```
 
+### Download from GitHub Releases
+
+Better still, don't build anything: every tagged release ships a pre-packed
+`testmymcp-<version>.tgz`, uploaded by the CI/CD pipeline. It installs registry-style (files and
+dependencies copied correctly), so it works on every platform/npm version:
+
+```sh
+# latest release
+npm install -g https://github.com/SBTopZZZ-LG/testmymcp/releases/latest/download/testmymcp-0.1.0.tgz
+
+# a specific release (URL is pinned to that version's tag)
+npm install -g https://github.com/SBTopZZZ-LG/testmymcp/releases/download/v0.1.0/testmymcp-0.1.0.tgz
+```
+
+```sh
+# or download the tarball and install it locally
+curl -L -o testmymcp.tgz https://github.com/SBTopZZZ-LG/testmymcp/releases/latest/download/testmymcp-0.1.0.tgz
+npm install -g ./testmymcp.tgz
+```
+
 ### Run on the fly with npx
 
 Run any command without installing anything:
