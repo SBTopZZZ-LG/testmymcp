@@ -15,3 +15,7 @@ export interface Reporter {
     readonly format: ReportFormat;
     render(results: readonly TestResult[], meta?: ReportMeta): string;
 }
+export interface ReportOptions {
+    /** Omit embedded per-test payloads (evidence/request/response) from JSON output. */
+    stripEvidence?: boolean;
+}

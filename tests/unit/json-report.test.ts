@@ -57,4 +57,39 @@ describe('buildJsonReport', () => {
     expect(createReporter('json').format).toBe('json');
     expect(createReporter('terminal').format).toBe('terminal');
   });
+
+  it('omits embedded payloads from the JSON report when stripEvidence is set', () => {
+    const heavy = result({
+      id: 'tools/call get_symbols',
+      category: 'capability',
+      level: TestLevel.Capability,
+      status: 'pass',
+      evidence: { content: [{ type: 'text', text: 'x'.repeat(1024 * 1024) }] },
+      request: { id: 'r1', timestamp: 1, direction: 'out', kind: 'request', method: 'tools/call' },
+      response: { id: 'r2', timestamp: 2, direction: 'in', kind: 'response', method: 'tools/call' },
+    });
+    const full = buildJsonReport([heavy]);
+    expect(full.tests[0]?.evidence).toBeDefined();
+    expect(full.tests[0]?.request).toBeDefined();
+    expect(full.tests[0]?.response).toBeDefined();
+
+    const compact = buildJsonReport([heavy], {}, { stripEvidence: true });
+    expect(compact.tests[0]).not.toHaveProperty('evidence');
+    expect(compact.tests[0]).not.toHaveProperty('request');
+    expect(compact.tests[0]).not.toHaveProperty('response');
+    expect(compact.tests[0]).toMatchObject({ id: 'tools/call get_symbols', status: 'pass' });
+  });
+
+  it('applies stripEvidence through the reporter factory', () => {
+    const heavy = result({
+      id: 'tools/call get_symbols',
+      status: 'fail',
+      error: { layer: 'transport', type: 'line-size', message: 'too large' },
+      evidence: { blob: 'y'.repeat(2048) },
+    });
+    const compact = createReporter('json', { stripEvidence: true }).render([heavy]);
+    const parsed = JSON.parse(compact) as ReturnType<typeof buildJsonReport>;
+    expect(parsed.tests[0]).not.toHaveProperty('evidence');
+    expect(parsed.errors).toEqual([expect.stringContaining('too large')]);
+  });
 });

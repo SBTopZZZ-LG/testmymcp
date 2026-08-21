@@ -1,4 +1,5 @@
 import type { TestResult } from '../core/types/test-result.js';
+import type { ReportOptions } from './types.js';
 import { type TestSummary } from './summary.js';
 import type { ReportMeta, Reporter } from './types.js';
 export interface JsonReport {
@@ -10,5 +11,6 @@ export interface JsonReport {
     errors: string[];
     warnings: string[];
 }
-export declare function buildJsonReport(results: readonly TestResult[], meta?: ReportMeta): JsonReport;
+export declare function buildJsonReport(results: readonly TestResult[], meta?: ReportMeta, options?: ReportOptions): JsonReport;
+export declare function createJsonReporter(options?: ReportOptions): Reporter;
 export declare const jsonReporter: Reporter;

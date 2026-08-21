@@ -9,6 +9,7 @@ export interface HttpCommandOptions {
     mode: ToolExecutionMode;
     level: number;
     json: boolean;
+    jsonSummary?: boolean;
     timeoutMs: number;
     showSecrets: boolean;
     token?: string;

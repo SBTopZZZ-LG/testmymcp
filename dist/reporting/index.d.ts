@@ -1,5 +1,5 @@
-import type { ReportFormat, Reporter } from './types.js';
-export declare function createReporter(format: ReportFormat): Reporter;
+import type { ReportFormat, ReportOptions, Reporter } from './types.js';
+export declare function createReporter(format: ReportFormat, options?: ReportOptions): Reporter;
 export * from './types.js';
 export * from './summary.js';
 export * from './terminal.js';

@@ -1,9 +1,9 @@
-import { jsonReporter } from './json.js';
+import { createJsonReporter, jsonReporter } from './json.js';
 import { terminalReporter } from './terminal.js';
-export function createReporter(format) {
+export function createReporter(format, options = {}) {
     switch (format) {
         case 'json':
-            return jsonReporter;
+            return options.stripEvidence === true ? createJsonReporter(options) : jsonReporter;
         case 'terminal':
             return terminalReporter;
     }

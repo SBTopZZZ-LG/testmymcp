@@ -1,5 +1,9 @@
 import { computeSummary } from './summary.js';
-export function buildJsonReport(results, meta = {}) {
+function withOmittedPayloads(result) {
+    const { evidence: _evidence, request: _request, response: _response, ...rest } = result;
+    return rest;
+}
+export function buildJsonReport(results, meta = {}, options = {}) {
     const errors = [];
     const warnings = [];
     for (const result of results) {
@@ -10,18 +14,27 @@ export function buildJsonReport(results, meta = {}) {
             warnings.push(...result.warnings.map((warning) => `${result.id}: ${warning}`));
         }
     }
+    const tests = [...results];
+    if (options.stripEvidence === true) {
+        for (let i = 0; i < tests.length; i += 1) {
+            tests[i] = withOmittedPayloads(tests[i]);
+        }
+    }
     return {
         tool: 'testmymcp',
         schemaVersion: '1.0',
         meta,
         summary: computeSummary(results),
-        tests: [...results],
+        tests,
         errors,
         warnings,
     };
 }
-export const jsonReporter = {
-    format: 'json',
-    render: (results, meta) => JSON.stringify(buildJsonReport(results, meta), null, 2) + '\n',
-};
+export function createJsonReporter(options = {}) {
+    return {
+        format: 'json',
+        render: (results, meta) => JSON.stringify(buildJsonReport(results, meta, options), null, 2) + '\n',
+    };
+}
+export const jsonReporter = createJsonReporter();
 //# sourceMappingURL=json.js.map

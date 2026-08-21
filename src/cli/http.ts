@@ -14,6 +14,7 @@ export interface HttpCommandOptions {
   mode: ToolExecutionMode;
   level: number;
   json: boolean;
+  jsonSummary?: boolean;
   timeoutMs: number;
   showSecrets: boolean;
   token?: string;
@@ -46,7 +47,10 @@ export async function runHttp(options: HttpCommandOptions): Promise<number> {
   });
 
   const summary = computeSummary(results);
-  const reporter = createReporter(options.json ? 'json' : 'terminal');
+  const reporter = createReporter(
+    options.json ? 'json' : 'terminal',
+    options.jsonSummary === true ? { stripEvidence: true } : undefined,
+  );
   process.stdout.write(reporter.render(results, meta));
 
   return summary.fail > 0 ? 1 : 0;

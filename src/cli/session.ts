@@ -30,6 +30,7 @@ interface SessionCommandOptions extends Record<string, string | string[] | undef
   mode?: string;
   level?: string;
   json?: string;
+  jsonSummary?: string;
   showSecrets?: string;
 }
 
@@ -79,6 +80,10 @@ export function registerSessionCommands(program: Command): void {
     .option('--mode <mode>', 'tool execution policy: safe, readonly, all', 'safe')
     .option('--level <n>', 'highest test level to run (0-7, default 3)', '3')
     .option('--json', 'emit a machine-readable JSON report')
+    .option(
+      '--json-summary',
+      'compact JSON report without embedded per-test payloads (evidence/request/response)',
+    )
     .option('--timeout <ms>', 'overall test timeout in milliseconds', '30000')
     .option('--token <token>', 'bearer token to use with the persisted session')
     .option('--env <key=value>', 'secret env var for a stdio child (repeatable)', collectEnv, [])
@@ -278,7 +283,10 @@ async function testAction(idOrName: string, commandOptions: SessionCommandOption
     });
 
     const summary = computeSummary(results);
-    const reporter = createReporter(commandOptions.json !== undefined ? 'json' : 'terminal');
+    const reporter = createReporter(
+      commandOptions.json !== undefined ? 'json' : 'terminal',
+      commandOptions.jsonSummary !== undefined ? { stripEvidence: true } : undefined,
+    );
     process.stdout.write(reporter.render(results, meta));
     process.exitCode = summary.fail > 0 ? 1 : 0;
   } catch (error) {

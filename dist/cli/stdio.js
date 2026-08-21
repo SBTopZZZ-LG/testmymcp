@@ -20,7 +20,7 @@ export async function runStdio(options) {
         extensions: options.extensions,
     });
     const summary = computeSummary(results);
-    const reporter = createReporter(options.json ? 'json' : 'terminal');
+    const reporter = createReporter(options.json ? 'json' : 'terminal', options.jsonSummary === true ? { stripEvidence: true } : undefined);
     process.stdout.write(reporter.render(results, meta));
     return summary.fail > 0 ? 1 : 0;
 }

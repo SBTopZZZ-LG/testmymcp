@@ -42,6 +42,10 @@ program
   .option('--mode <mode>', 'tool execution policy: safe, readonly, all', 'safe')
   .option('--level <n>', 'highest test level to run (0-7, default 3)', '3')
   .option('--json', 'emit a machine-readable JSON report')
+  .option(
+    '--json-summary',
+    'compact JSON report without embedded per-test payloads (evidence/request/response)',
+  )
   .option('--timeout <ms>', 'overall test timeout in milliseconds', '30000')
   .option('--show-secrets', 'disable redaction of sensitive values in traces')
   .option('--era <era>', 'protocol era: legacy or modern', 'legacy')
@@ -60,6 +64,7 @@ program
         mode: parseMode(commandOptions.mode ?? 'safe'),
         level: parseLevel(commandOptions.level ?? '3'),
         json: Boolean(commandOptions.json),
+        jsonSummary: commandOptions.jsonSummary !== undefined,
         timeoutMs: Number.parseInt(commandOptions.timeout ?? '30000', 10) || 30000,
         showSecrets: Boolean(commandOptions.showSecrets),
         era: parseEra(commandOptions.era ?? 'legacy'),
@@ -95,6 +100,10 @@ program
   .option('--mode <mode>', 'tool execution policy: safe, readonly, all', 'safe')
   .option('--level <n>', 'highest test level to run (0-7, default 3)', '3')
   .option('--json', 'emit a machine-readable JSON report')
+  .option(
+    '--json-summary',
+    'compact JSON report without embedded per-test payloads (evidence/request/response)',
+  )
   .option('--timeout <ms>', 'overall test timeout in milliseconds', '30000')
   .option('--token <token>', 'bearer token for Authorization header')
   .option('--accept <format>', 'response format to request (json or sse)')
@@ -109,6 +118,7 @@ program
         mode: parseMode(commandOptions.mode ?? 'safe'),
         level: parseLevel(commandOptions.level ?? '3'),
         json: Boolean(commandOptions.json),
+        jsonSummary: commandOptions.jsonSummary !== undefined,
         timeoutMs: Number.parseInt(commandOptions.timeout ?? '30000', 10) || 30000,
         showSecrets: Boolean(commandOptions.showSecrets),
         token: commandOptions.token !== undefined ? commandOptions.token : undefined,

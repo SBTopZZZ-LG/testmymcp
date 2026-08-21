@@ -5,6 +5,7 @@ export interface StdioCommandOptions {
     mode: ToolExecutionMode;
     level: number;
     json: boolean;
+    jsonSummary?: boolean;
     timeoutMs: number;
     showSecrets: boolean;
     maxSchemaBytes?: number;
