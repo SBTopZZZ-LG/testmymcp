@@ -1,0 +1,44 @@
+{
+  "name": "testmymcp",
+  "version": "0.1.0",
+  "description": "A protocol conformance + interoperability + robustness tester for MCP servers (Legacy + Modern eras, all transports).",
+  "type": "module",
+  "bin": {
+    "testmymcp": "dist/cli/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "conformance",
+    "testing",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "commander": "^15.0.0",
+    "undici": "^7.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "eslint": "^10.8.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.11"
+  }
+}
