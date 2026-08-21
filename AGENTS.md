@@ -51,6 +51,12 @@ npm test
   (`big_echo`), never a header-annotated param.
 - Modern headers must carry `version: MODERN_VERSION`, not the legacy default; the fixture
   helpers default to legacy (`tests/fixtures/helpers/http.js`).
+- **Distribution: global git-origin installs are broken on npm 10.9.x/Windows.** `npm install -g
+user/repo`, `github:user/repo` and `git+…` forms link the package to a volatile
+  `npm-cache\_cacache\tmp\git-clone*` (junction) that resolves empty → `testmymcp` fails with
+  `MODULE_NOT_FOUND` for `dist/cli/index.js`. Reproduced even from a local `git+file:` URL.
+  Registry-style installs work: `npm pack` then `npm install -g testmymcp-<version>.tgz`;
+  `npx -y github:SBTopZZZ-LG/testmymcp …` also works (runs from the `_npx` cache).
 
 ## Test layout / E2E
 

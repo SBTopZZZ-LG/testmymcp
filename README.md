@@ -20,15 +20,23 @@ on the fly with `npx`.
 ### Global install (from Git)
 
 ```sh
-npm install -g github:SBTopZZZ-LG/testmymcp
+npm install -g SBTopZZZ-LG/testmymcp   # GitHub shorthand; same as github:SBTopZZZ-LG/testmymcp
 ```
 
 The compiled CLI ships with the repository (so installs don't need a build step) and you get a
 ready `testmymcp` command.
 
-> macOS / Linux: global git installs work out of the box. On some Windows/npm
-> versions the global `-g git+…` install can fail to unpack the project files; when that
-> happens, run it per-project or use the `npx` form below instead.
+> **Windows / npm 10.9.x gotcha:** a global **git-origin** install (`npm install -g user/repo`
+> or `npm install -g github:user/repo`, and the `git+…` forms) can fail on this npm version
+> even though the repo ships the compiled CLI. npm links the installed package to a volatile
+> cache clone that ends up empty, so running `testmymcp` fails with
+> `Cannot find module …\dist\cli\index.js`. This is an npm bug, not a packaging one — install a
+> **packed tarball** instead, which npm handles registry-style (copies files and dependencies):
+
+> ```sh
+> npm pack                                  # creates testmymcp-<version>.tgz
+> npm install -g testmymcp-<version>.tgz
+> ```
 
 ### Run on the fly with npx
 
