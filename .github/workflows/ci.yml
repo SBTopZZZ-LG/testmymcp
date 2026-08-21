@@ -25,17 +25,20 @@ jobs:
       - run: npm run build
       - run: npm test
 
-  verify-windows:
-    name: Verify (windows, node 22)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run build
-      - run: npm test
+  # verify-windows is DISABLED for now — Windows Actions runners bill higher
+  # than ubuntu/linux runners. Re-enable when cross-platform transport
+  # coverage is worth the cost (e.g. to catch Windows-only spawn/taskkill paths).
+  # verify-windows:
+  #   name: Verify (windows, node 22)
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+  #         cache: npm
+  #     - run: npm ci
+  #     - run: npm run typecheck
+  #     - run: npm run lint
+  #     - run: npm run build
+  #     - run: npm test
