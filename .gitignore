@@ -8,3 +8,9 @@ coverage/
 
 # Phase 3 spec source (cloned, gitignored)
 spec-src/
+
+# Internal planning / working notes (only BLUEPRINT.md is kept in VCS)
+ACCOUNT_FOR.md
+PHASE3-HANDOFF.md
+PHASE3-SPEC-INVENTORY.md
+PHASE4-HANDOFF.md
