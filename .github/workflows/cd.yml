@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  GH_TOKEN: ${{ github.token }}
+
 concurrency:
   group: cd-${{ github.event.workflow_run.head_sha }}
   cancel-in-progress: false
