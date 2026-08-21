@@ -14,17 +14,49 @@ pass / warn / fail per test with the failure layer.
 
 ## Install
 
+This package is not published to npm. Install it directly from the Git repository, or run it
+on the fly with `npx`.
+
+### Global install (from Git)
+
 ```sh
-npm install -g testmymcp
+npm install -g github:SBTopZZZ-LG/testmymcp
 ```
 
-Or run straight from the repo with the compiled CLI:
+The compiled CLI ships with the repository (so installs don't need a build step) and you get a
+ready `testmymcp` command.
+
+> macOS / Linux: global git installs work out of the box. On some Windows/npm
+> versions the global `-g git+…` install can fail to unpack the project files; when that
+> happens, run it per-project or use the `npx` form below instead.
+
+### Run on the fly with npx
+
+Run any command without installing anything:
 
 ```sh
+# one-shot stdio test
+npx -y github:SBTopZZZ-LG/testmymcp stdio "npx some-mcp-server"
+
+# streamable HTTP test
+npx -y github:SBTopZZZ-LG/testmymcp http https://example.com/mcp --transport streamable-http
+```
+
+`npx` pulls the package from the repo and runs the bundled CLI on each invocation (the first run
+is slower while it caches). This is the most reliable way to use the tool.
+
+### From a local clone
+
+```sh
+git clone git@github.com:SBTopZZZ-LG/testmymcp.git
+cd testmymcp
 npm install
 npm run build
 node dist/cli/index.js --help
 ```
+
+If you install from a fork, replace `SBTopZZZ-LG` in the `github:` specs with your own
+GitHub username/org.
 
 ## Usage
 

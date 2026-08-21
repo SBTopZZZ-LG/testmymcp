@@ -1,0 +1,51 @@
+import { type IdStyle } from '../../core/jsonrpc/id.js';
+import { type JsonRpcId } from '../../core/jsonrpc/messages.js';
+import { RequestMultiplexer } from '../../core/jsonrpc/multiplexer.js';
+import type { InitializeOptions, LifecycleState, NegotiatedSession, ProtocolAdapter, ServerInfo } from '../../core/protocol/adapter.js';
+import type { ClientCapabilities } from '../../core/protocol/capabilities.js';
+import type { TimeoutKind } from '../../core/timeouts/deadline.js';
+import type { TraceStore } from '../../core/tracing/store.js';
+import type { ProtocolEra, ProtocolVersion } from '../../core/types/protocol.js';
+import type { Transport } from '../../transports/transport.js';
+export interface LegacyAdapterOptions {
+    transport: Transport;
+    clientInfo?: ServerInfo;
+    clientCapabilities?: Partial<ClientCapabilities>;
+    preferVersion?: ProtocolVersion;
+    requestTimeoutMs?: number;
+    initTimeoutMs?: number;
+    shutdownTimeoutMs?: number;
+    idStyle?: IdStyle;
+    clock?: () => number;
+    trace?: TraceStore;
+}
+export declare class LegacyProtocolAdapter implements ProtocolAdapter {
+    readonly era: ProtocolEra;
+    readonly mux: RequestMultiplexer;
+    private readonly transport;
+    private readonly clientInfo;
+    private readonly clientCapabilities;
+    private readonly preferVersion;
+    private readonly requestTimeoutMs;
+    private readonly initTimeoutMs;
+    private readonly idGen;
+    private readonly trace?;
+    private readonly clock;
+    private readonly startedAt;
+    private lifecycleState;
+    private session;
+    constructor(options: LegacyAdapterOptions);
+    get state(): LifecycleState;
+    connect(): Promise<void>;
+    initialize(options?: InitializeOptions): Promise<NegotiatedSession>;
+    request<T = unknown>(method: string, params?: object, timeoutMs?: number): Promise<T>;
+    rawRequest<T = unknown>(id: JsonRpcId, method: string, params?: object, timeoutMs?: number, timeoutKind?: TimeoutKind): Promise<T>;
+    notify(method: string, params?: object): Promise<void>;
+    shutdown(): Promise<void>;
+    disconnect(): Promise<void>;
+    private setState;
+    private send;
+    private traceOut;
+    private traceIn;
+}
+export declare function createLegacyProtocolAdapter(options: LegacyAdapterOptions): LegacyProtocolAdapter;

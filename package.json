@@ -22,7 +22,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "prepack": "npm run build",
-    "prepare": "husky"
+    "prepare": "node ./scripts/prepare.mjs"
   },
   "lint-staged": {
     "*.{ts,js,mjs,json,css,md}": "prettier --write",

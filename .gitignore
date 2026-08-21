@@ -1,5 +1,7 @@
+# dist/ is intentionally NOT ignored: the package is distributed via git/npx
+# (not npmjs), so the compiled CLI must ship with the repo for installs to work
+# without a build step.
 node_modules/
-dist/
 coverage/
 *.log
 .DS_Store

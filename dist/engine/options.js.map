@@ -1,0 +1,1 @@
+{"version":3,"file":"options.js","sourceRoot":"","sources":["../../src/engine/options.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,SAAS,EAAE,MAAM,8BAA8B,CAAC;AAczD,MAAM,UAAU,iBAAiB,CAAC,YAAiC,EAAE;IACnE,OAAO;QACL,IAAI,EAAE,MAAM;QACZ,QAAQ,EAAE,SAAS,CAAC,UAAU;QAC9B,gBAAgB,EAAE,MAAM;QACxB,GAAG,SAAS;KACb,CAAC;AACJ,CAAC"}
