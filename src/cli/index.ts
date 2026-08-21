@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { createRequire } from 'node:module';
 
 import { parseEnvEntries } from '../sessions/env.js';
 import { type HttpCommandOptions, runHttp } from './http.js';
@@ -19,12 +20,14 @@ function collectEnv(value: string, previous: string[]): string[] {
   return previous.concat([value]);
 }
 
+const pkg = createRequire(import.meta.url)('../../package.json') as { version?: string };
+
 const program = new Command();
 
 program
   .name('testmymcp')
   .description('Protocol conformance, interoperability and robustness tester for MCP servers')
-  .version('0.1.0');
+  .version(pkg.version ?? '0.0.0');
 
 program
   .command('inspect <file>')
