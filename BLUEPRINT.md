@@ -129,19 +129,38 @@ Each phase is independently shippable and validates the architecture before expa
 
 **Phase 3 — Modern protocol.** *(Complete; see PHASE3-HANDOFF.md.)* `ModernProtocolAdapter` via the factory, stateless `server/discover`, per-request `_meta`, MRTR (`input_required` auto-retry with method-aware input responses), header routing (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`, Base64 `Mcp-Name`), stateless streamable-HTTP mode (no `Mcp-Session-Id`), `subscriptions/listen` client support, `x-mcp-header`→`Mcp-Param-*` mirroring, **Tasks extension** polling (`tasks/get`/`update`/`cancel` + `pollTask`), caching/TTL validation in the discovery suite, `-32021` capability-rejection coverage, and a modern stdio integration test. Modern CLI `--era modern` / `--protocol-version`. *§1, §2 modern, §6.3, §10, §17, §19, §23, §27–§29, §33.*
 
-**Phase 4 — Behavioral & robustness.** *(Complete; see PHASE4-HANDOFF.md.)* New `behavioral`
+**Phase 4 — Behavioral & robustness.** *(Complete.)* New `behavioral`
 (level 4) and `robustness` (level 5) suites: request-id-isolated concurrency, huge/unicode/binary
 payload round-trips, cancellation-notification handling, malformed-input rejection + recovery,
 concurrent mixed primitives, concurrency stress, a cursor-pagination follow utility, server
 logging notifications, and graceful shutdown (stdio SIGTERM→SIGKILL escalation + client
 disconnect-after-kill). Opt-in fixture flags (`--paginate`, `--log-on-call`) added; modern
-`big_echo` body-only tool. `--level 4`/`--level 5` enable them. *§14–§16, §24, §26, §34,
-§37–§41.* Deferred (see handoff §3): streaming/backpressure measurement, progress results,
-roots client-request coverage, read/completion pagination.
+`big_echo` body-only tool. `--level 4`/`--level 5` enable them. Also includes the e2e harness:
+shared fixture helpers (`tests/fixtures/helpers`), dedicated single-purpose unhappy fixtures
+(`tests/fixtures/unhappy`), and a declarative scenario manifest + runner
+(`tests/e2e/manifest/scenarios.json`, `run-scenario.ts`, `scenarios.test.ts`) asserting per-test
+outcomes with required/optional flags and no-hang invariants. CI added
+(`.github/workflows/ci.yml`, ubuntu node 20/22; `verify-windows` intentionally disabled to cut
+cost). *§14–§16, §24, §26, §34, §37–§41.* Deferred: streaming/backpressure measurement, progress
+results, roots client-request coverage, read/completion pagination.
 
 **Phase 5 — Security & fuzzing.** `testmymcp scan` (injection/agent-safety), HTTP security (TLS, SSRF, decompression bombs, huge responses), malformed-protocol fuzz tier (opt-in, Level 7). *§31, §32, §8 malformed, §46 L6–7.*
 
 **Phase 6 — Polish.** JUnit reporter, CI docs, extension-registry expansion, `inspect trace.json`.
+
+### Active / next target (not a numbered phase; see Plane board)
+- **User-managed persistent sessions** (`session create/list/show/dispose`). Decouple connections
+  from single CLI invocations: the user creates a session (config supplied), a local store
+  persists it, later commands reuse it by a stable id, and `dispose` tears it down (indirectly
+  revoking it). One-shot runs with an explicit config must still work (reuse is optional). Store
+  must never write secrets in plaintext (reuse redaction). Backlog of work; may lead to a larger
+  architectural change (e.g. turning the CLI into a long-running local server) if pursued.
+
+### Known edge case (backlog, normal priority)
+- **Servers that revoke access on disconnect** (OAuth/OTP/bank-grade MCPs). The tool is
+  per-invocation and always closes the connection after a command, so it cannot satisfy servers
+  that revoke on ANY close. Addressed only if/when worth the architectural cost (e.g. a local
+  daemon holding connections open, or a full OAuth client with refresh-token persistence).
 
 ---
 
