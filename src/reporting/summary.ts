@@ -1,4 +1,9 @@
-import type { FailureLayer, TestCategory, TestResult, TestStatus } from '../core/types/test-result.js';
+import type {
+  FailureLayer,
+  TestCategory,
+  TestResult,
+  TestStatus,
+} from '../core/types/test-result.js';
 
 export interface TestSummary {
   total: number;

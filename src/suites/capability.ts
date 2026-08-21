@@ -1,10 +1,14 @@
-import { TestLevel, type TestResult } from '../core/types/test-result.js';
-import { classifyTool, executionDecision, type ToolRisk } from '../core/tools/safety.js';
-import { generateValidInput, isValidSchema, validateAgainstSchema } from '../core/schemas/validator.js';
 import { JsonRpcRemoteError } from '../core/jsonrpc/multiplexer.js';
-import { pass, warn, fail, skip, resolveErrorLayer } from '../engine/result.js';
-import type { SuiteContext } from '../engine/ctx.js';
 import type { ToolDefinition } from '../core/primitives/types.js';
+import {
+  generateValidInput,
+  isValidSchema,
+  validateAgainstSchema,
+} from '../core/schemas/validator.js';
+import { type ToolRisk, classifyTool, executionDecision } from '../core/tools/safety.js';
+import { TestLevel, type TestResult } from '../core/types/test-result.js';
+import type { SuiteContext } from '../engine/ctx.js';
+import { fail, pass, resolveErrorLayer, skip, warn } from '../engine/result.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -25,14 +29,24 @@ async function invokeTool(
   const started = ctx.now();
   const toolTimeout = ctx.options.toolTimeoutMs ?? ctx.options.defaultTimeoutMs;
   try {
-    const result = (await ctx.adapter.request('tools/call', { name: tool.name, arguments: input }, toolTimeout)) as Record<string, unknown>;
+    const result = (await ctx.adapter.request(
+      'tools/call',
+      { name: tool.name, arguments: input },
+      toolTimeout,
+    )) as Record<string, unknown>;
     // Tasks extension: a tool may return a `task` result that must be polled to
     // completion. Only modern adapters expose pollTask; others treat it as a pass.
     const taskId = isRecord(result) && result.resultType === 'task' ? result.taskId : undefined;
     if (typeof taskId === 'string') {
-      const poller = (ctx.adapter as { pollTask?(taskId: string, options?: { maxPollMs?: number }): Promise<unknown> }).pollTask;
+      const poller = (
+        ctx.adapter as {
+          pollTask?(taskId: string, options?: { maxPollMs?: number }): Promise<unknown>;
+        }
+      ).pollTask;
       if (typeof poller === 'function') {
-        const final = (await poller.call(ctx.adapter, taskId, { maxPollMs: toolTimeout })) as Record<string, unknown>;
+        const final = (await poller.call(ctx.adapter, taskId, {
+          maxPollMs: toolTimeout,
+        })) as Record<string, unknown>;
         const finalState = typeof final.status === 'string' ? final.status : 'unknown';
         if (finalState === 'completed') {
           return {
@@ -101,7 +115,11 @@ async function invokeTool(
     const layer = resolveErrorLayer(error, 'tools/call');
     return {
       durationMs: ctx.now() - started,
-      outcome: { status: 'fail', layer, reason: error instanceof Error ? error.message : String(error) },
+      outcome: {
+        status: 'fail',
+        layer,
+        reason: error instanceof Error ? error.message : String(error),
+      },
     };
   }
 }
@@ -112,7 +130,12 @@ export async function runCapabilitySuite(ctx: SuiteContext): Promise<TestResult[
   const tools = ctx.shared.tools;
 
   if (tools.length === 0) {
-    results.push(skip('capability tools', 'capability', TestLevel.Capability, 'no tools discovered', { transport, durationMs: 0 }));
+    results.push(
+      skip('capability tools', 'capability', TestLevel.Capability, 'no tools discovered', {
+        transport,
+        durationMs: 0,
+      }),
+    );
     return results;
   }
 
@@ -125,36 +148,50 @@ export async function runCapabilitySuite(ctx: SuiteContext): Promise<TestResult[
     const decision = executionDecision(risk, ctx.options.mode);
     if (!decision.run) {
       results.push(
-        skip(testId, 'capability', TestLevel.Capability, decision.reason ?? 'skipped by execution policy', {
-          transport,
-          durationMs: 0,
-          evidence: { risk } satisfies { risk: ToolRisk },
-        }),
+        skip(
+          testId,
+          'capability',
+          TestLevel.Capability,
+          decision.reason ?? 'skipped by execution policy',
+          {
+            transport,
+            durationMs: 0,
+            evidence: { risk } satisfies { risk: ToolRisk },
+          },
+        ),
       );
       continue;
     }
 
     if (tool.inputSchema === undefined || tool.inputSchema === null) {
       const { outcome, durationMs } = await invokeTool(ctx, tool, {});
-      results.push(
-        toResult(testId, outcome, { risk, durationMs, transport, hasSchema: false }),
-      );
+      results.push(toResult(testId, outcome, { risk, durationMs, transport, hasSchema: false }));
       continue;
     }
 
     const schemaCheck = isValidSchema(tool.inputSchema, maxSchemaBytes);
     if (!schemaCheck.valid) {
       results.push(
-        warn(`${testId} schema`, 'capability', TestLevel.Capability, `invalid inputSchema: ${schemaCheck.errors[0] ?? 'unknown error'}`, {
-          transport,
-          durationMs: 0,
-        }),
+        warn(
+          `${testId} schema`,
+          'capability',
+          TestLevel.Capability,
+          `invalid inputSchema: ${schemaCheck.errors[0] ?? 'unknown error'}`,
+          {
+            transport,
+            durationMs: 0,
+          },
+        ),
       );
       continue;
     }
 
     const input = generateValidInput(tool.inputSchema, 4);
-    const check = validateAgainstSchema(tool.inputSchema, input === undefined ? {} : input, maxSchemaBytes);
+    const check = validateAgainstSchema(
+      tool.inputSchema,
+      input === undefined ? {} : input,
+      maxSchemaBytes,
+    );
 
     if (input === undefined || !check.valid) {
       results.push(
@@ -181,7 +218,12 @@ export async function runCapabilitySuite(ctx: SuiteContext): Promise<TestResult[
 
 function toResult(
   id: string,
-  outcome: { status: 'pass' | 'warn' | 'fail'; layer?: 'transport' | 'jsonrpc' | 'protocol' | 'application'; reason: string; evidence?: unknown },
+  outcome: {
+    status: 'pass' | 'warn' | 'fail';
+    layer?: 'transport' | 'jsonrpc' | 'protocol' | 'application';
+    reason: string;
+    evidence?: unknown;
+  },
   ctx: { risk: ToolRisk; durationMs: number; transport: string; hasSchema: boolean },
 ): TestResult {
   const extras = {
@@ -195,6 +237,14 @@ function toResult(
     case 'warn':
       return warn(id, 'capability', TestLevel.Capability, outcome.reason, extras);
     case 'fail':
-      return fail(id, 'capability', TestLevel.Capability, outcome.layer ?? 'transport', 'tools/call', outcome.reason, extras);
+      return fail(
+        id,
+        'capability',
+        TestLevel.Capability,
+        outcome.layer ?? 'transport',
+        'tools/call',
+        outcome.reason,
+        extras,
+      );
   }
 }

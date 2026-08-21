@@ -1,5 +1,5 @@
-import type { TransportType } from './protocol.js';
 import type { JsonRpcId } from '../jsonrpc/messages.js';
+import type { TransportType } from './protocol.js';
 
 export type TraceDirection = 'in' | 'out';
 

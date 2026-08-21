@@ -80,13 +80,23 @@ const tools = [
   },
 ];
 
-const resources = [{ uri: 'file:///tmp/hello.txt', name: 'hello', description: 'a sample resource', mimeType: 'text/plain' }];
-const prompts = [{ name: 'greeting', description: 'greet someone', arguments: [{ name: 'who', required: true }] }];
+const resources = [
+  {
+    uri: 'file:///tmp/hello.txt',
+    name: 'hello',
+    description: 'a sample resource',
+    mimeType: 'text/plain',
+  },
+];
+const prompts = [
+  { name: 'greeting', description: 'greet someone', arguments: [{ name: 'who', required: true }] },
+];
 
 const tasks = new Map();
 
 function readMeta(message) {
-  const meta = message.params && typeof message.params === 'object' ? message.params._meta : undefined;
+  const meta =
+    message.params && typeof message.params === 'object' ? message.params._meta : undefined;
   if (meta === null || typeof meta !== 'object') return undefined;
   return meta;
 }
@@ -98,7 +108,11 @@ function checkProtocol(message) {
     return {
       jsonrpc: '2.0',
       id: message.id,
-      error: { code: -32022, message: 'Unsupported protocol version', data: { supported: SUPPORTED, requested: version } },
+      error: {
+        code: -32022,
+        message: 'Unsupported protocol version',
+        data: { supported: SUPPORTED, requested: version },
+      },
     };
   }
   if (message.id !== undefined && !meta) {
@@ -117,7 +131,11 @@ function handleMessage(message, requestHeaders) {
     return {
       jsonrpc: '2.0',
       id: message.id,
-      error: { code: -32022, message: 'Unsupported protocol version', data: { supported: SUPPORTED, requested: '2026-07-28' } },
+      error: {
+        code: -32022,
+        message: 'Unsupported protocol version',
+        data: { supported: SUPPORTED, requested: '2026-07-28' },
+      },
     };
   }
 
@@ -143,20 +161,22 @@ function handleMessage(message, requestHeaders) {
       return {
         jsonrpc: '2.0',
         id: message.id,
-          result: {
-            resultType: 'complete',
-            supportedVersions: SUPPORTED,
-            capabilities: {
-              tools: { listChanged: true },
-              resources: {},
-              prompts: {},
-              extensions: { 'io.modelcontextprotocol/tasks': {} },
-            },
-            _meta: { 'io.modelcontextprotocol/serverInfo': { name: 'modern-fake-server', version: '1.0.0' } },
-            instructions: 'Modern stateless fixture',
-            ttlMs: 60000,
-            cacheScope: 'public',
+        result: {
+          resultType: 'complete',
+          supportedVersions: SUPPORTED,
+          capabilities: {
+            tools: { listChanged: true },
+            resources: {},
+            prompts: {},
+            extensions: { 'io.modelcontextprotocol/tasks': {} },
           },
+          _meta: {
+            'io.modelcontextprotocol/serverInfo': { name: 'modern-fake-server', version: '1.0.0' },
+          },
+          instructions: 'Modern stateless fixture',
+          ttlMs: 60000,
+          cacheScope: 'public',
+        },
       };
 
     case 'tools/list':
@@ -188,7 +208,11 @@ function handleMessage(message, requestHeaders) {
       const callArgs = message.params?.arguments;
       if (name === 'sum') {
         if (!callArgs || typeof callArgs.a !== 'number' || typeof callArgs.b !== 'number') {
-          return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: 'a and b must be integers' } };
+          return {
+            jsonrpc: '2.0',
+            id: message.id,
+            error: { code: -32602, message: 'a and b must be integers' },
+          };
         }
         return {
           jsonrpc: '2.0',
@@ -205,7 +229,9 @@ function handleMessage(message, requestHeaders) {
         for (const key of ['mcp-param-region', 'mcp-param-count', 'mcp-param-x-note']) {
           if (headers[key] !== undefined) picked[key] = headers[key];
         }
-        const body = ['region', 'count', 'note', 'rate'].map((k) => `${k}=${callArgs?.[k] ?? ''}`).join(',');
+        const body = ['region', 'count', 'note', 'rate']
+          .map((k) => `${k}=${callArgs?.[k] ?? ''}`)
+          .join(',');
         return {
           jsonrpc: '2.0',
           id: message.id,
@@ -234,10 +260,17 @@ function handleMessage(message, requestHeaders) {
         return {
           jsonrpc: '2.0',
           id: message.id,
-          result: { resultType: 'task', taskId: 'task-1', status: 'working', ttlMs: 5000, pollIntervalMs: 100 },
+          result: {
+            resultType: 'task',
+            taskId: 'task-1',
+            status: 'working',
+            ttlMs: 5000,
+            pollIntervalMs: 100,
+          },
         };
       }
-      if (name === 'ask') {        // exercise MRTR: first ask for input, then accept it on retry.
+      if (name === 'ask') {
+        // exercise MRTR: first ask for input, then accept it on retry.
         if (!message.params?.inputResponses) {
           return {
             jsonrpc: '2.0',
@@ -245,7 +278,18 @@ function handleMessage(message, requestHeaders) {
             result: {
               resultType: 'input_required',
               inputRequests: {
-                confirm: { method: 'elicitation/create', params: { mode: 'form', message: 'please confirm', requestedSchema: { type: 'object', properties: { ok: { type: 'boolean' } }, required: ['ok'] } } },
+                confirm: {
+                  method: 'elicitation/create',
+                  params: {
+                    mode: 'form',
+                    message: 'please confirm',
+                    requestedSchema: {
+                      type: 'object',
+                      properties: { ok: { type: 'boolean' } },
+                      required: ['ok'],
+                    },
+                  },
+                },
               },
               requestState: 'state-1',
             },
@@ -254,17 +298,29 @@ function handleMessage(message, requestHeaders) {
         return {
           jsonrpc: '2.0',
           id: message.id,
-          result: { resultType: 'complete', content: [{ type: 'text', text: 'confirmed' }], evidence: message.params?.requestState },
+          result: {
+            resultType: 'complete',
+            content: [{ type: 'text', text: 'confirmed' }],
+            evidence: message.params?.requestState,
+          },
         };
       }
-      return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `unknown tool: ${String(name ?? '?')}` } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: { code: -32602, message: `unknown tool: ${String(name ?? '?')}` },
+      };
     }
 
     case 'tasks/get': {
       const id = message.params?.taskId;
       const task = tasks.get(id);
       if (task === undefined) {
-        return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `unknown task: ${String(id ?? '?')}` } };
+        return {
+          jsonrpc: '2.0',
+          id: message.id,
+          error: { code: -32602, message: `unknown task: ${String(id ?? '?')}` },
+        };
       }
       task.polls += 1;
       if (task.polls >= 2 || task.status !== 'working') {
@@ -282,14 +338,28 @@ function handleMessage(message, requestHeaders) {
           },
         };
       }
-      return { jsonrpc: '2.0', id: message.id, result: { resultType: 'task', taskId: id, status: 'working', ttlMs: 5000, pollIntervalMs: 100 } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          resultType: 'task',
+          taskId: id,
+          status: 'working',
+          ttlMs: 5000,
+          pollIntervalMs: 100,
+        },
+      };
     }
 
     case 'tasks/update': {
       const id = message.params?.taskId;
       const task = tasks.get(id);
       if (task === undefined) {
-        return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `unknown task: ${String(id ?? '?')}` } };
+        return {
+          jsonrpc: '2.0',
+          id: message.id,
+          error: { code: -32602, message: `unknown task: ${String(id ?? '?')}` },
+        };
       }
       task.status = 'completed';
       return {
@@ -310,10 +380,24 @@ function handleMessage(message, requestHeaders) {
       const id = message.params?.taskId;
       const task = tasks.get(id);
       if (task === undefined) {
-        return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `unknown task: ${String(id ?? '?')}` } };
+        return {
+          jsonrpc: '2.0',
+          id: message.id,
+          error: { code: -32602, message: `unknown task: ${String(id ?? '?')}` },
+        };
       }
       task.status = 'cancelled';
-      return { jsonrpc: '2.0', id: message.id, result: { resultType: 'task', taskId: id, status: 'cancelled', ttlMs: 5000, pollIntervalMs: 100 } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          resultType: 'task',
+          taskId: id,
+          status: 'cancelled',
+          ttlMs: 5000,
+          pollIntervalMs: 100,
+        },
+      };
     }
 
     case 'resources/list':
@@ -334,18 +418,37 @@ function handleMessage(message, requestHeaders) {
           },
         };
       }
-      return { jsonrpc: '2.0', id: message.id, result: { resultType: 'complete', resources, ttlMs: 60000, cacheScope: 'public' } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { resultType: 'complete', resources, ttlMs: 60000, cacheScope: 'public' },
+      };
 
     case 'prompts/list':
-      return { jsonrpc: '2.0', id: message.id, result: { resultType: 'complete', prompts, ttlMs: 60000, cacheScope: 'public' } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { resultType: 'complete', prompts, ttlMs: 60000, cacheScope: 'public' },
+      };
 
     case 'subscriptions/listen': {
       // Without an SSE accept, return an empty listen result (graceful close).
-      return { jsonrpc: '2.0', id: message.id, result: { resultType: 'complete', _meta: { 'io.modelcontextprotocol/subscriptionId': message.id } } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          resultType: 'complete',
+          _meta: { 'io.modelcontextprotocol/subscriptionId': message.id },
+        },
+      };
     }
 
     default:
-      return { jsonrpc: '2.0', id: message.id, error: { code: -32601, message: `method not found: ${String(message.method)}` } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: { code: -32601, message: `method not found: ${String(message.method)}` },
+      };
   }
 }
 
@@ -397,7 +500,10 @@ function sendListenStream(res, subscriptionId) {
   const ack = {
     jsonrpc: '2.0',
     method: 'notifications/subscriptions/acknowledged',
-    params: { _meta: { 'io.modelcontextprotocol/subscriptionId': subscriptionId }, notifications: {} },
+    params: {
+      _meta: { 'io.modelcontextprotocol/subscriptionId': subscriptionId },
+      notifications: {},
+    },
   };
   res.write('event: message\n');
   res.write(`data: ${JSON.stringify(ack)}\n\n`);
@@ -443,7 +549,11 @@ function sendSse(res, payload, method) {
   res.setHeader('MCP-Protocol-Version', SERVER_VERSION);
   res.setHeader('Mcp-Method', method ?? '');
   res.setHeader('Mcp-Name', 'modernfakeserver');
-  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' });
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
   res.flushHeaders?.();
   res.write('event: message\n');
   res.write(`data: ${JSON.stringify(payload)}\n\n`);
@@ -462,14 +572,24 @@ const server = http.createServer((req, res) => {
     try {
       body = await parseBody(req);
     } catch {
-      sendJson(res, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } }, undefined);
+      sendJson(
+        res,
+        400,
+        { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } },
+        undefined,
+      );
       return;
     }
     let message;
     try {
       message = JSON.parse(body);
     } catch {
-      sendJson(res, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } }, undefined);
+      sendJson(
+        res,
+        400,
+        { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } },
+        undefined,
+      );
       return;
     }
     const response = handleMessage(message, req.headers);

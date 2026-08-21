@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import { spawn } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
-import { TestLevel } from '../../src/core/types/test-result.js';
 import { protocolAdapterFactory } from '../../src/core/protocol/factory.js';
-import { defaultRunOptions } from '../../src/engine/options.js';
+import { TestLevel } from '../../src/core/types/test-result.js';
 import { TestEngine } from '../../src/engine/engine.js';
-import { StreamableHttpTransport, LegacySseTransport } from '../../src/transports/http/index.js';
+import { defaultRunOptions } from '../../src/engine/options.js';
+import { LegacySseTransport, StreamableHttpTransport } from '../../src/transports/http/index.js';
 
 const fixturePath = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/http-server.js');
 
@@ -27,7 +27,10 @@ async function startFixture(flags: string[] = []): Promise<Fixture> {
   });
   await new Promise<void>((resolvePort, reject) => {
     let stderr = '';
-    const timer = setTimeout(() => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)), 10_000);
+    const timer = setTimeout(
+      () => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)),
+      10_000,
+    );
     child.stderr?.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');
       const match = /listening on (http:\/\/127\.0\.0\.1:\d+)/.exec(stderr);
@@ -52,8 +55,9 @@ async function startFixture(flags: string[] = []): Promise<Fixture> {
         if (child.exitCode !== null) return resolveKill();
         child.once('exit', () => resolveKill());
         if (process.platform === 'win32') {
-          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once('exit', () =>
-            setTimeout(resolveKill, 100),
+          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once(
+            'exit',
+            () => setTimeout(resolveKill, 100),
           );
         } else {
           child.kill('SIGTERM');
@@ -67,7 +71,11 @@ async function runEngine(url: string, transportType: 'streamable-http' | 'legacy
   const transport =
     transportType === 'legacy-sse'
       ? new LegacySseTransport({ url, requestTimeoutMs: 10_000 })
-      : new StreamableHttpTransport({ url, protocolVersion: '2025-11-25', requestTimeoutMs: 10_000 });
+      : new StreamableHttpTransport({
+          url,
+          protocolVersion: '2025-11-25',
+          requestTimeoutMs: 10_000,
+        });
 
   const runOptions = defaultRunOptions({
     mode: 'safe',
@@ -112,7 +120,11 @@ describe('engine integration over streamable HTTP', () => {
     const fixture = await startFixture(['--bad-method-header']);
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2025-11-25', requestTimeoutMs: 10_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2025-11-25',
+        requestTimeoutMs: 10_000,
+      });
       const adapter = protocolAdapterFactory.create('legacy', { transport, initTimeoutMs: 5000 });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();

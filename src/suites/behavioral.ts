@@ -1,8 +1,8 @@
-import { TestLevel, type TestResult } from '../core/types/test-result.js';
 import { JsonRpcRemoteError } from '../core/jsonrpc/multiplexer.js';
-import { pass, warn, fail, skip, resolveErrorLayer } from '../engine/result.js';
-import type { SuiteContext } from '../engine/ctx.js';
 import type { ToolDefinition } from '../core/primitives/types.js';
+import { TestLevel, type TestResult } from '../core/types/test-result.js';
+import type { SuiteContext } from '../engine/ctx.js';
+import { fail, pass, resolveErrorLayer, skip, warn } from '../engine/result.js';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -28,14 +28,25 @@ function hasTool(tools: ToolDefinition[], name: string): boolean {
  * payload fidelity across transports. Prefers `big_echo` (body-only echo, no
  * header mirroring) so huge payloads stay in the request body; falls back to
  * `delete_file` (which echoes its `path`). */
-function pickRoundTripTool(tools: ToolDefinition[]): { name: string; argKey: string; extra: Record<string, unknown> } | undefined {
+function pickRoundTripTool(
+  tools: ToolDefinition[],
+): { name: string; argKey: string; extra: Record<string, unknown> } | undefined {
   if (hasTool(tools, 'big_echo')) return { name: 'big_echo', argKey: 'data', extra: {} };
   if (hasTool(tools, 'delete_file')) return { name: 'delete_file', argKey: 'path', extra: {} };
   return undefined;
 }
 
-async function callSum(ctx: SuiteContext, a: number, b: number, timeoutMs: number): Promise<number> {
-  const result = (await ctx.adapter.request('tools/call', { name: 'sum', arguments: { a, b } }, timeoutMs)) as Record<string, unknown>;
+async function callSum(
+  ctx: SuiteContext,
+  a: number,
+  b: number,
+  timeoutMs: number,
+): Promise<number> {
+  const result = (await ctx.adapter.request(
+    'tools/call',
+    { name: 'sum', arguments: { a, b } },
+    timeoutMs,
+  )) as Record<string, unknown>;
   const text = resultText(result);
   const parsed = Number.parseInt(text, 10);
   return Number.isNaN(parsed) ? NaN : parsed;
@@ -48,7 +59,12 @@ export async function runBehavioralSuite(ctx: SuiteContext): Promise<TestResult[
   const reqTimeout = ctx.options.requestTimeoutMs ?? ctx.options.defaultTimeoutMs;
 
   if (!hasTool(tools, 'sum')) {
-    results.push(skip('behavioral concurrency', 'behavioral', TestLevel.Behavioral, 'no sum tool discovered', { transport, durationMs: 0 }));
+    results.push(
+      skip('behavioral concurrency', 'behavioral', TestLevel.Behavioral, 'no sum tool discovered', {
+        transport,
+        durationMs: 0,
+      }),
+    );
   } else {
     const N = 8;
     const started = ctx.now();
@@ -92,17 +108,29 @@ export async function runBehavioralSuite(ctx: SuiteContext): Promise<TestResult[
           durationMs: 0,
           evidence: { pending: ctx.adapter.mux.pendingCount },
         })
-      : warn('behavioral mux clean', 'behavioral', TestLevel.Behavioral, `multiplexer has ${ctx.adapter.mux.pendingCount} pending entries after the suite`, {
-          transport,
-          durationMs: 0,
-          evidence: { pending: ctx.adapter.mux.pendingCount },
-        }),
+      : warn(
+          'behavioral mux clean',
+          'behavioral',
+          TestLevel.Behavioral,
+          `multiplexer has ${ctx.adapter.mux.pendingCount} pending entries after the suite`,
+          {
+            transport,
+            durationMs: 0,
+            evidence: { pending: ctx.adapter.mux.pendingCount },
+          },
+        ),
   );
 
   const rt = pickRoundTripTool(tools);
   if (rt === undefined) {
     results.push(
-      skip('behavioral payload round-trip', 'behavioral', TestLevel.Behavioral, 'no echo/delete_file tool discovered', { transport, durationMs: 0 }),
+      skip(
+        'behavioral payload round-trip',
+        'behavioral',
+        TestLevel.Behavioral,
+        'no echo/delete_file tool discovered',
+        { transport, durationMs: 0 },
+      ),
     );
   } else {
     const cases: Array<{ id: string; value: string }> = [
@@ -121,14 +149,28 @@ export async function runBehavioralSuite(ctx: SuiteContext): Promise<TestResult[
         const text = resultText(result);
         const durationMs = ctx.now() - started;
         if (text.includes(c.value)) {
-          results.push(pass(c.id, 'behavioral', TestLevel.Behavioral, { transport, durationMs, evidence: { bytes: c.value.length } }));
-        } else {
           results.push(
-            fail(c.id, 'behavioral', TestLevel.Behavioral, 'application', 'payload-mismatch', 'server did not echo the exact payload back', {
+            pass(c.id, 'behavioral', TestLevel.Behavioral, {
               transport,
               durationMs,
-              evidence: { sentBytes: c.value.length, receivedBytes: text.length },
+              evidence: { bytes: c.value.length },
             }),
+          );
+        } else {
+          results.push(
+            fail(
+              c.id,
+              'behavioral',
+              TestLevel.Behavioral,
+              'application',
+              'payload-mismatch',
+              'server did not echo the exact payload back',
+              {
+                transport,
+                durationMs,
+                evidence: { sentBytes: c.value.length, receivedBytes: text.length },
+              },
+            ),
           );
         }
       } catch (error) {
@@ -137,8 +179,20 @@ export async function runBehavioralSuite(ctx: SuiteContext): Promise<TestResult[
     }
   }
 
-  if (!hasTool(tools, 'sum') || ctx.shared.resources.length === 0 || ctx.shared.prompts.length === 0) {
-    results.push(skip('behavioral concurrent mixed', 'behavioral', TestLevel.Behavioral, 'insufficient discovered primitives', { transport, durationMs: 0 }));
+  if (
+    !hasTool(tools, 'sum') ||
+    ctx.shared.resources.length === 0 ||
+    ctx.shared.prompts.length === 0
+  ) {
+    results.push(
+      skip(
+        'behavioral concurrent mixed',
+        'behavioral',
+        TestLevel.Behavioral,
+        'insufficient discovered primitives',
+        { transport, durationMs: 0 },
+      ),
+    );
   } else {
     const started = ctx.now();
     try {
@@ -149,15 +203,29 @@ export async function runBehavioralSuite(ctx: SuiteContext): Promise<TestResult[
         callSum(ctx, 2, 5, reqTimeout),
       ]);
       const ok =
-        isRecord(tl) && Array.isArray(tl.tools) &&
-        isRecord(rl) && Array.isArray(rl.resources) &&
-        isRecord(pl) && Array.isArray(pl.prompts) &&
+        isRecord(tl) &&
+        Array.isArray(tl.tools) &&
+        isRecord(rl) &&
+        Array.isArray(rl.resources) &&
+        isRecord(pl) &&
+        Array.isArray(pl.prompts) &&
         sum === 7;
       const durationMs = ctx.now() - started;
       results.push(
         ok
-          ? pass('behavioral concurrent mixed', 'behavioral', TestLevel.Behavioral, { transport, durationMs })
-          : fail('behavioral concurrent mixed', 'behavioral', TestLevel.Behavioral, 'application', 'concurrent-mismatch', 'a concurrently-issued primitive call returned an unexpected result', { transport, durationMs }),
+          ? pass('behavioral concurrent mixed', 'behavioral', TestLevel.Behavioral, {
+              transport,
+              durationMs,
+            })
+          : fail(
+              'behavioral concurrent mixed',
+              'behavioral',
+              TestLevel.Behavioral,
+              'application',
+              'concurrent-mismatch',
+              'a concurrently-issued primitive call returned an unexpected result',
+              { transport, durationMs },
+            ),
       );
     } catch (error) {
       results.push(fromBehavioralError('behavioral concurrent mixed', error, ctx, started));
@@ -167,18 +235,39 @@ export async function runBehavioralSuite(ctx: SuiteContext): Promise<TestResult[
   return results;
 }
 
-function fromBehavioralError(id: string, error: unknown, ctx: SuiteContext, started: number): TestResult {
+function fromBehavioralError(
+  id: string,
+  error: unknown,
+  ctx: SuiteContext,
+  started: number,
+): TestResult {
   const durationMs = ctx.now() - started;
   if (error instanceof JsonRpcRemoteError) {
     const layer = resolveErrorLayer(error, 'tools/call');
-    return fail(id, 'behavioral', TestLevel.Behavioral, layer, 'jsonrpc-error', `server rejected the call: ${error.message}`, {
+    return fail(
+      id,
+      'behavioral',
+      TestLevel.Behavioral,
+      layer,
+      'jsonrpc-error',
+      `server rejected the call: ${error.message}`,
+      {
+        transport: ctx.transport,
+        durationMs,
+        evidence: { code: error.code },
+      },
+    );
+  }
+  return fail(
+    id,
+    'behavioral',
+    TestLevel.Behavioral,
+    resolveErrorLayer(error, 'tools/call'),
+    'exception',
+    error instanceof Error ? error.message : String(error),
+    {
       transport: ctx.transport,
       durationMs,
-      evidence: { code: error.code },
-    });
-  }
-  return fail(id, 'behavioral', TestLevel.Behavioral, resolveErrorLayer(error, 'tools/call'), 'exception', error instanceof Error ? error.message : String(error), {
-    transport: ctx.transport,
-    durationMs,
-  });
+    },
+  );
 }

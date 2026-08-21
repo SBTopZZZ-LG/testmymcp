@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+
 import { redactDeep } from '../core/tracing/redaction.js';
-import type { StoredSession, StoredTarget, SessionTarget } from './types.js';
+import type { SessionTarget, StoredSession, StoredTarget } from './types.js';
 import { sanitizeToStoredTarget } from './types.js';
 
 export interface SessionStoreFile {

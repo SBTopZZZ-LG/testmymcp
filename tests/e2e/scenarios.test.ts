@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
-import { runScenario, type ExpectedStatus, type ScenarioSetup } from './run-scenario.js';
 import type { TestResult } from '../src/core/types/test-result.js';
+import { type ExpectedStatus, type ScenarioSetup, runScenario } from './run-scenario.js';
 
 interface ManifestExpectation {
   status: ExpectedStatus;
@@ -52,7 +52,10 @@ describe('e2e scenario manifest (client-robustness)', () => {
         const map = byId(outcome.results);
 
         if (sc.noHang) {
-          expect(map.get('engine overall-timeout'), 'must not hit the overall run timeout').toBeUndefined();
+          expect(
+            map.get('engine overall-timeout'),
+            'must not hit the overall run timeout',
+          ).toBeUndefined();
         }
 
         for (const [testId, exp] of Object.entries(sc.expectations ?? {})) {

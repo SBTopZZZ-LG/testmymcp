@@ -1,7 +1,8 @@
-import { spawn, type ChildProcess } from 'node:child_process';
-import { encodeNdjson, NdjsonReader } from '../../core/jsonrpc/codec.js';
-import type { Transport, TransportObserver, ExitInfo, OversizeInfo } from '../transport.js';
+import { type ChildProcess, spawn } from 'node:child_process';
+
+import { NdjsonReader, encodeNdjson } from '../../core/jsonrpc/codec.js';
 import { parseServerCommand } from '../command.js';
+import type { ExitInfo, OversizeInfo, Transport, TransportObserver } from '../transport.js';
 
 const MAX_STDERR_LINES = 1000;
 
@@ -58,6 +59,14 @@ export class StdioTransport implements Transport {
       env: { ...process.env, ...this.options.env },
     });
     this.child = child;
+    // The server may exit while we still hold its stdin (e.g. it crashed, or
+    // teardown raced with a write). A write into that broken pipe emits an
+    // 'error' (EPIPE) on the stream; without a listener it surfaces as an
+    // uncaught exception. The write-side promise/callback is rejected and
+    // handled by callers, so swallow the event here.
+    child.stdin?.on('error', () => {
+      // ignore expected broken-pipe errors
+    });
     this.reader = new NdjsonReader({
       maxBytes: this.options.maxLineBytes,
       onLine: (line) => this.checkLineSize(line),

@@ -1,12 +1,17 @@
-import { describe, expect, it } from 'vitest';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
 import { SessionStore, SessionStoreError, deriveSessionId } from '../../src/sessions/store.js';
 import type { SessionTarget, StoredSession } from '../../src/sessions/types.js';
 import { expandStoredTarget, sanitizeToStoredTarget } from '../../src/sessions/types.js';
 
-async function tempFile(): Promise<{ file: string; store: SessionStore; cleanup: () => Promise<void> }> {
+async function tempFile(): Promise<{
+  file: string;
+  store: SessionStore;
+  cleanup: () => Promise<void>;
+}> {
   const dir = await mkdtemp(join(tmpdir(), 'tmcp-store-'));
   const file = join(dir, 'sessions.json');
   return {
@@ -60,11 +65,21 @@ describe('SessionStore', () => {
     };
     const { target, requiresToken } = sanitizeToStoredTarget(http);
     expect(requiresToken).toBe(true);
-    expect(target).toMatchObject({ transport: 'http', url: http.url, httpTransport: 'legacy-sse', authMode: 'bearer' });
+    expect(target).toMatchObject({
+      transport: 'http',
+      url: http.url,
+      httpTransport: 'legacy-sse',
+      authMode: 'bearer',
+    });
     expect(JSON.stringify(target)).not.toContain('sekrit-token');
 
     const expanded = expandStoredTarget(target, 'new-token');
-    expect(expanded).toMatchObject({ transport: 'http', url: http.url, httpTransport: 'legacy-sse', accept: 'sse' });
+    expect(expanded).toMatchObject({
+      transport: 'http',
+      url: http.url,
+      httpTransport: 'legacy-sse',
+      accept: 'sse',
+    });
     if (expanded.transport === 'http') {
       expect(expanded.auth?.token).toBe('new-token');
     }

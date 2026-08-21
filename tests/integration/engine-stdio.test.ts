@@ -1,12 +1,13 @@
-import { describe, expect, it } from 'vitest';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { StdioTransport } from '../../src/transports/stdio/index.js';
+import { describe, expect, it } from 'vitest';
+
 import { protocolAdapterFactory } from '../../src/core/protocol/factory.js';
-import { TestEngine } from '../../src/engine/engine.js';
-import { defaultRunOptions, type RunOptions } from '../../src/engine/options.js';
 import { TestLevel, type TestResult } from '../../src/core/types/test-result.js';
 import type { SharedDiscovery } from '../../src/engine/ctx.js';
+import { TestEngine } from '../../src/engine/engine.js';
+import { type RunOptions, defaultRunOptions } from '../../src/engine/options.js';
+import { StdioTransport } from '../../src/transports/stdio/index.js';
 
 const fixturePath = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/fake-server.js');
 
@@ -83,10 +84,17 @@ describe('engine integration over a real stdio process', () => {
 
   it('detects a server that crashes on startup', async () => {
     const { results, shared } = await runCommand('--crash');
-    const connect = byId(results, 'connect spawn');
-    expect(connect).toBeDefined();
-    expect(connect?.status).toBe('fail');
+    // The crash can surface at connect (spawn fails in the settle window) or
+    // at initialize (the child exits after connect resolves); either is a
+    // correct detection. The invariant is that no session is established and
+    // the premature exit is reported as a failure.
     expect(shared.session).toBeUndefined();
+    const candidates = [
+      byId(results, 'connect spawn'),
+      byId(results, 'protocol initialize'),
+      byId(results, 'engine connect'),
+    ];
+    expect(candidates.some((result) => result?.status === 'fail')).toBe(true);
   });
 
   it('times out against a server that never responds', async () => {

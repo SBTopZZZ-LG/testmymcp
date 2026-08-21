@@ -1,7 +1,7 @@
 // Unhappy fixture (modern HTTP): accepts server/discover, but rejects every
 // other method with MissingRequiredClientCapabilityError (-32021) unless the
 // client advertises the `elicitation` capability it requires.
-import { argsOf, listen, makeError, makeResult, MODERN_VERSION } from '../helpers/http.js';
+import { MODERN_VERSION, argsOf, listen, makeError, makeResult } from '../helpers/http.js';
 
 listen({
   port: argsOf().port,
@@ -22,7 +22,8 @@ listen({
     if (!caps || typeof caps !== 'object' || !caps.elicitation) {
       return makeError(message, -32021, 'Missing required client capability');
     }
-    if (message.method === 'tools/list') return makeResult(message, { resultType: 'complete', tools: [] });
+    if (message.method === 'tools/list')
+      return makeResult(message, { resultType: 'complete', tools: [] });
     return makeResult(message, { resultType: 'complete' });
   },
 });

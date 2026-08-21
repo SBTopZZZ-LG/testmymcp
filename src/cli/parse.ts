@@ -1,5 +1,9 @@
 import type { ToolExecutionMode } from '../core/tools/safety.js';
-import { isProtocolVersion, type ProtocolEra, type ProtocolVersion } from '../core/types/protocol.js';
+import {
+  type ProtocolEra,
+  type ProtocolVersion,
+  isProtocolVersion,
+} from '../core/types/protocol.js';
 import type { HttpTransportKind } from '../sessions/types.js';
 
 export function parseLevel(value: string): number {

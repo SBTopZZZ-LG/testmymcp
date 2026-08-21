@@ -1,3 +1,5 @@
+import { JsonRpcRemoteError } from '../core/jsonrpc/multiplexer.js';
+import { TimeoutError } from '../core/timeouts/deadline.js';
 import type {
   FailureLayer,
   Severity,
@@ -6,8 +8,6 @@ import type {
   TestResult,
   TestStatus,
 } from '../core/types/test-result.js';
-import { TimeoutError } from '../core/timeouts/deadline.js';
-import { JsonRpcRemoteError } from '../core/jsonrpc/multiplexer.js';
 
 export function resolveErrorLayer(error: unknown, method: string | undefined): FailureLayer {
   if (error instanceof TimeoutError) return 'transport';
@@ -58,18 +58,35 @@ function base(
   };
 }
 
-export function pass(id: string, category: TestCategory, level: TestLevel, extras: ResultExtras = {}): TestResult {
+export function pass(
+  id: string,
+  category: TestCategory,
+  level: TestLevel,
+  extras: ResultExtras = {},
+): TestResult {
   return base(id, category, level, 'pass', 'info', extras);
 }
 
-export function warn(id: string, category: TestCategory, level: TestLevel, message: string, extras: ResultExtras = {}): TestResult {
+export function warn(
+  id: string,
+  category: TestCategory,
+  level: TestLevel,
+  message: string,
+  extras: ResultExtras = {},
+): TestResult {
   return base(id, category, level, 'warn', 'medium', {
     ...extras,
     warnings: [message, ...(extras.warnings ?? [])],
   });
 }
 
-export function skip(id: string, category: TestCategory, level: TestLevel, reason: string, extras: ResultExtras = {}): TestResult {
+export function skip(
+  id: string,
+  category: TestCategory,
+  level: TestLevel,
+  reason: string,
+  extras: ResultExtras = {},
+): TestResult {
   return base(id, category, level, 'skip', 'info', {
     ...extras,
     warnings: [reason, ...(extras.warnings ?? [])],
@@ -100,5 +117,13 @@ export function fromError(
   extras: ResultExtras = {},
 ): TestResult {
   const message = error instanceof Error ? error.message : String(error);
-  return fail(id, category, level, layer, error instanceof Error ? error.name : 'Error', message, extras);
+  return fail(
+    id,
+    category,
+    level,
+    layer,
+    error instanceof Error ? error.name : 'Error',
+    message,
+    extras,
+  );
 }

@@ -28,7 +28,7 @@ if (HELP_FLAG) {
       '  --garbage-sse         emit occasional malformed SSE data lines',
       '  -h, --help            show this help',
       '',
-    ].join('\n')
+    ].join('\n'),
   );
   process.exit(0);
 }
@@ -60,7 +60,12 @@ const tools = [
 ];
 
 const resources = [
-  { uri: 'file:///tmp/hello.txt', name: 'hello', description: 'a sample resource', mimeType: 'text/plain' },
+  {
+    uri: 'file:///tmp/hello.txt',
+    name: 'hello',
+    description: 'a sample resource',
+    mimeType: 'text/plain',
+  },
 ];
 
 const resourceTemplates = [{ uriTemplate: 'file:///{path}', name: 'generic file' }];
@@ -106,7 +111,10 @@ function handleMessage(message, session) {
         const pageSize = 1;
         const slice = tools.slice(page * pageSize, page * pageSize + pageSize);
         const hasMore = (page + 1) * pageSize < tools.length;
-        return makeResult(message, { tools: slice, nextCursor: hasMore ? String(page + 1) : undefined });
+        return makeResult(message, {
+          tools: slice,
+          nextCursor: hasMore ? String(page + 1) : undefined,
+        });
       }
       return makeResult(message, { tools });
 
@@ -118,10 +126,14 @@ function handleMessage(message, session) {
         if (!callArgs || typeof callArgs.a !== 'number' || typeof callArgs.b !== 'number') {
           return makeError(message, -32602, 'invalid params: a and b must be integers');
         }
-        return makeResult(message, { content: [{ type: 'text', text: String(callArgs.a + callArgs.b) }] });
+        return makeResult(message, {
+          content: [{ type: 'text', text: String(callArgs.a + callArgs.b) }],
+        });
       }
       if (name === 'delete_file') {
-        return makeResult(message, { content: [{ type: 'text', text: `deleted ${String(callArgs?.path ?? '?')}` }] });
+        return makeResult(message, {
+          content: [{ type: 'text', text: `deleted ${String(callArgs?.path ?? '?')}` }],
+        });
       }
       return makeError(message, -32602, `unknown tool: ${String(name ?? '?')}`);
     }
@@ -133,7 +145,10 @@ function handleMessage(message, session) {
         const pageSize = 1;
         const slice = resources.slice(page * pageSize, page * pageSize + pageSize);
         const hasMore = (page + 1) * pageSize < resources.length;
-        return makeResult(message, { resources: slice, nextCursor: hasMore ? String(page + 1) : undefined });
+        return makeResult(message, {
+          resources: slice,
+          nextCursor: hasMore ? String(page + 1) : undefined,
+        });
       }
       return makeResult(message, { resources });
 
@@ -145,7 +160,9 @@ function handleMessage(message, session) {
       return makeResult(message, { prompts });
 
     case 'completion/complete':
-      return makeResult(message, { completion: { values: ['alpha', 'beta', 'gamma'], hasMore: false, total: 3 } });
+      return makeResult(message, {
+        completion: { values: ['alpha', 'beta', 'gamma'], hasMore: false, total: 3 },
+      });
 
     case 'ping':
       return makeResult(message, {});
@@ -238,7 +255,13 @@ function handleMessages(req, res, url) {
       message = JSON.parse(body);
     } catch {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } }));
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: null,
+          error: { code: -32700, message: 'parse error' },
+        }),
+      );
       return;
     }
 
@@ -302,7 +325,13 @@ function handleStreamableHttp(req, res, body) {
   try {
     message = JSON.parse(body);
   } catch {
-    sendJsonResponse(res, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } }, undefined, null);
+    sendJsonResponse(
+      res,
+      400,
+      { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } },
+      undefined,
+      null,
+    );
     return;
   }
 
@@ -312,7 +341,9 @@ function handleStreamableHttp(req, res, body) {
 
   if (method === 'initialize') {
     // Fresh session for this request (or reuse if a session header was sent).
-    const session = sessionHeader ? sseSessions.get(sessionHeader) || createSession() : createSession();
+    const session = sessionHeader
+      ? sseSessions.get(sessionHeader) || createSession()
+      : createSession();
     if (sessionHeader) sseSessions.set(sessionHeader, session);
     else sseSessions.set(session.id, session);
 
@@ -369,7 +400,13 @@ const server = http.createServer((req, res) => {
       try {
         body = await parseBody(req);
       } catch {
-        sendJsonResponse(res, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } }, undefined, null);
+        sendJsonResponse(
+          res,
+          400,
+          { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } },
+          undefined,
+          null,
+        );
         return;
       }
       handleStreamableHttp(req, res, body);

@@ -1,4 +1,5 @@
 import { request } from 'undici';
+
 import type { AuthConfig } from './types.js';
 
 /**
@@ -14,10 +15,7 @@ import type { AuthConfig } from './types.js';
  * supplied (rather than silently failing).
  */
 
-export type AuthDiscoveryKind =
-  | 'oauth-protected'
-  | 'no-oauth-metadata'
-  | 'probe-failed';
+export type AuthDiscoveryKind = 'oauth-protected' | 'no-oauth-metadata' | 'probe-failed';
 
 export interface OAuthDiscoveryResult {
   readonly kind: AuthDiscoveryKind;
@@ -32,7 +30,9 @@ const DISCOVERY_PATHS = [
   '/.well-known/openid-configuration',
 ];
 
-function isOAuthMetadata(value: unknown): value is { issuer?: unknown; authorization_endpoint?: unknown; token_endpoint?: unknown } {
+function isOAuthMetadata(
+  value: unknown,
+): value is { issuer?: unknown; authorization_endpoint?: unknown; token_endpoint?: unknown } {
   return typeof value === 'object' && value !== null;
 }
 
@@ -75,8 +75,11 @@ export async function discoverProtectedEndpoint(
             kind: 'oauth-protected',
             issuer: payload.issuer,
             authorizationEndpoint:
-              typeof payload.authorization_endpoint === 'string' ? payload.authorization_endpoint : undefined,
-            tokenEndpoint: typeof payload.token_endpoint === 'string' ? payload.token_endpoint : undefined,
+              typeof payload.authorization_endpoint === 'string'
+                ? payload.authorization_endpoint
+                : undefined,
+            tokenEndpoint:
+              typeof payload.token_endpoint === 'string' ? payload.token_endpoint : undefined,
             note: `OAuth resource metadata discovered at ${origin + path}`,
           };
         }

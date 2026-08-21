@@ -85,7 +85,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-export function parseServerCapabilities(raw: unknown, _version: ProtocolVersion): ServerCapabilities {
+export function parseServerCapabilities(
+  raw: unknown,
+  _version: ProtocolVersion,
+): ServerCapabilities {
   const capabilities = emptyServerCapabilities();
   capabilities.raw = isRecord(raw) ? raw : undefined;
   if (capabilities.raw === undefined) return capabilities;
@@ -96,18 +99,23 @@ export function parseServerCapabilities(raw: unknown, _version: ProtocolVersion)
   capabilities.logging = 'logging' in capabilities.raw;
   capabilities.completions = 'completions' in capabilities.raw;
   const toolsRaw = isRecord(capabilities.raw.tools) ? capabilities.raw.tools : undefined;
-  const resourcesRaw = isRecord(capabilities.raw.resources) ? capabilities.raw.resources : undefined;
+  const resourcesRaw = isRecord(capabilities.raw.resources)
+    ? capabilities.raw.resources
+    : undefined;
   const promptsRaw = isRecord(capabilities.raw.prompts) ? capabilities.raw.prompts : undefined;
   capabilities.toolListChanged = toolsRaw?.listChanged === true;
   capabilities.resourceListChanged = resourcesRaw?.listChanged === true;
   capabilities.resourceSubscribe = resourcesRaw?.subscribe === true;
   capabilities.promptListChanged = promptsRaw?.listChanged === true;
   if (isRecord(capabilities.raw.extensions)) capabilities.extensions = capabilities.raw.extensions;
-  if (isRecord(capabilities.raw.experimental)) capabilities.experimental = capabilities.raw.experimental;
+  if (isRecord(capabilities.raw.experimental))
+    capabilities.experimental = capabilities.raw.experimental;
   return capabilities;
 }
 
-export function toClientCapabilitiesJson(capabilities: Partial<ClientCapabilities>): Record<string, unknown> {
+export function toClientCapabilitiesJson(
+  capabilities: Partial<ClientCapabilities>,
+): Record<string, unknown> {
   const output: Record<string, unknown> = {};
   if (capabilities.roots) output.roots = {};
   if (capabilities.sampling) {
@@ -125,7 +133,10 @@ export function toClientCapabilitiesJson(capabilities: Partial<ClientCapabilitie
   if (capabilities.extensions !== undefined && Object.keys(capabilities.extensions).length > 0) {
     output.extensions = capabilities.extensions;
   }
-  if (capabilities.experimental !== undefined && Object.keys(capabilities.experimental).length > 0) {
+  if (
+    capabilities.experimental !== undefined &&
+    Object.keys(capabilities.experimental).length > 0
+  ) {
     output.experimental = capabilities.experimental;
   }
   return output;

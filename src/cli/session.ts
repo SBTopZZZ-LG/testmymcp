@@ -1,13 +1,21 @@
 import type { Command } from 'commander';
+
+import { redactDeep } from '../core/tracing/redaction.js';
 import { createReporter } from '../reporting/index.js';
 import { computeSummary } from '../reporting/summary.js';
-import { redactDeep } from '../core/tracing/redaction.js';
+import { parseEnvEntries } from '../sessions/env.js';
 import { SessionStore, deriveSessionId } from '../sessions/index.js';
 import { probeTarget, runTarget } from '../sessions/index.js';
 import type { SessionTarget, StoredSession } from '../sessions/index.js';
 import { expandStoredTarget, sanitizeToStoredTarget } from '../sessions/index.js';
-import { parseEnvEntries } from '../sessions/env.js';
-import { parseEra, parseHttpAccept, parseHttpTransport, parseLevel, parseMode, parseProtocolVersion } from './parse.js';
+import {
+  parseEra,
+  parseHttpAccept,
+  parseHttpTransport,
+  parseLevel,
+  parseMode,
+  parseProtocolVersion,
+} from './parse.js';
 
 interface SessionCommandOptions extends Record<string, string | string[] | undefined> {
   transport?: string;
@@ -53,10 +61,7 @@ export function registerSessionCommands(program: Command): void {
     .option('--timeout <ms>', 'connection/initialize timeout in milliseconds', '30000')
     .action(createAction);
 
-  session
-    .command('list')
-    .description('list persisted sessions')
-    .action(listAction);
+  session.command('list').description('list persisted sessions').action(listAction);
 
   session
     .command('show <id>')
@@ -85,11 +90,17 @@ function collectEnv(value: string, previous: string[]): string[] {
   return previous.concat([value]);
 }
 
-async function createAction(targetArg: string, commandOptions: SessionCommandOptions): Promise<void> {
+async function createAction(
+  targetArg: string,
+  commandOptions: SessionCommandOptions,
+): Promise<void> {
   try {
     const store = new SessionStore();
     const era = commandOptions.era !== undefined ? parseEra(commandOptions.era) : undefined;
-    const version = commandOptions.protocolVersion !== undefined ? parseProtocolVersion(commandOptions.protocolVersion) : undefined;
+    const version =
+      commandOptions.protocolVersion !== undefined
+        ? parseProtocolVersion(commandOptions.protocolVersion)
+        : undefined;
     const timeoutMs = Number.parseInt(commandOptions.timeout ?? '30000', 10) || 30000;
     const name = commandOptions.name !== undefined ? commandOptions.name : undefined;
 
@@ -122,10 +133,16 @@ async function createAction(targetArg: string, commandOptions: SessionCommandOpt
     }
 
     const id = deriveSessionId(target);
-    const { target: storedTarget, requiresToken, requiresSecretEnv } = sanitizeToStoredTarget(target);
+    const {
+      target: storedTarget,
+      requiresToken,
+      requiresSecretEnv,
+    } = sanitizeToStoredTarget(target);
 
     if (name !== undefined) {
-      const existing = (await store.list(false)).find((session) => session.name === name && session.id !== id);
+      const existing = (await store.list(false)).find(
+        (session) => session.name === name && session.id !== id,
+      );
       if (existing !== undefined) {
         console.error(`testmymcp: a session already uses the name "${name}" (${existing.id})`);
         process.exitCode = 2;
@@ -162,10 +179,12 @@ async function createAction(targetArg: string, commandOptions: SessionCommandOpt
     console.log(`created session ${id}`);
     if (name !== undefined) console.log(`  alias: ${name}`);
     console.log(`  ${describeTarget(record)}`);
-    if (record.serverName !== undefined) console.log(`  server: ${record.serverName} ${record.serverVersion ?? ''}`.trim());
+    if (record.serverName !== undefined)
+      console.log(`  server: ${record.serverName} ${record.serverVersion ?? ''}`.trim());
     if (record.protocolVersion !== undefined) console.log(`  protocol: ${record.protocolVersion}`);
     if (record.requiresToken) console.log('  note: bearer token required; pass --token on `test`');
-    if (record.requiresSecretEnv) console.log('  note: secret env vars redacted; pass --env KEY=... on `test`');
+    if (record.requiresSecretEnv)
+      console.log('  note: secret env vars redacted; pass --env KEY=... on `test`');
   } catch (error) {
     console.error(`testmymcp: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 2;
@@ -202,7 +221,8 @@ async function showAction(idOrName: string): Promise<void> {
     if (session.name !== undefined) console.log(`name: ${session.name}`);
     console.log(`created: ${new Date(session.createdAt).toISOString()}`);
     console.log(`last used: ${new Date(session.lastUsedAt).toISOString()}`);
-    if (session.serverName !== undefined) console.log(`server: ${session.serverName} ${session.serverVersion ?? ''}`.trim());
+    if (session.serverName !== undefined)
+      console.log(`server: ${session.serverName} ${session.serverVersion ?? ''}`.trim());
     if (session.protocolVersion !== undefined) console.log(`protocol: ${session.protocolVersion}`);
     if (session.requiresToken) console.log('requires token: yes');
     console.log('target:');

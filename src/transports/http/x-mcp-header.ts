@@ -34,7 +34,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * annotated property's full `properties` path so header values can be read from
  * nested call arguments.
  */
-export function collectXMcpHeaders(inputSchema: unknown): Array<{ path: string[]; type: string; headerName: string }> {
+export function collectXMcpHeaders(
+  inputSchema: unknown,
+): Array<{ path: string[]; type: string; headerName: string }> {
   if (!isRecord(inputSchema)) return [];
   const out: Array<{ path: string[]; type: string; headerName: string }> = [];
   const rootType = typeof inputSchema.type === 'string' ? inputSchema.type : undefined;
@@ -85,15 +87,21 @@ export function validateToolHeaders(inputSchema: unknown): ValidateToolHeadersRe
     const headerName = annotation.headerName;
     const keyLabel = annotation.path.join('.');
     if (headerName === '') issues.push(`x-mcp-header on "${keyLabel}" is empty`);
-    if (!HEADER_NAME_TOKEN.test(headerName)) issues.push(`x-mcp-header "${headerName}" on "${keyLabel}" is not a valid field-name token`);
-    if (/[\r\n]/.test(headerName)) issues.push(`x-mcp-header on "${keyLabel}" contains control characters`);
+    if (!HEADER_NAME_TOKEN.test(headerName))
+      issues.push(`x-mcp-header "${headerName}" on "${keyLabel}" is not a valid field-name token`);
+    if (/[\r\n]/.test(headerName))
+      issues.push(`x-mcp-header on "${keyLabel}" contains control characters`);
     const lower = headerName.toLowerCase();
     if (seen.has(lower) && seen.get(lower) !== keyLabel) {
-      issues.push(`x-mcp-header "${headerName}" is duplicated (${seen.get(lower)} and ${keyLabel})`);
+      issues.push(
+        `x-mcp-header "${headerName}" is duplicated (${seen.get(lower)} and ${keyLabel})`,
+      );
     }
     seen.set(lower, keyLabel);
     if (!PRIMITIVE.has(annotation.type)) {
-      issues.push(`x-mcp-header "${headerName}" on "${keyLabel}" applies to non-primitive type "${annotation.type}"`);
+      issues.push(
+        `x-mcp-header "${headerName}" on "${keyLabel}" applies to non-primitive type "${annotation.type}"`,
+      );
     }
   }
 
@@ -107,7 +115,10 @@ export function validateToolHeaders(inputSchema: unknown): ValidateToolHeadersRe
  * the value-encoding rules (type conversion + Base64 sentinel for unsafe values).
  * Returns a map of header name → header value (already encoded).
  */
-export function buildMcpParamHeaders(inputSchema: unknown, argumentsObject: unknown): Record<string, string> {
+export function buildMcpParamHeaders(
+  inputSchema: unknown,
+  argumentsObject: unknown,
+): Record<string, string> {
   const out: Record<string, string> = {};
   if (!isRecord(inputSchema) || !isRecord(argumentsObject)) return out;
   const validation = validateToolHeaders(inputSchema);
@@ -156,7 +167,8 @@ function encodeParamHeader(type: string | undefined, value: unknown): string | u
 }
 
 function encodeHeaderValue(value: string): string {
-  const plain = /^[\x20-\x7E]*$/.test(value) && value === value.trim() && !value.startsWith('=?base64?');
+  const plain =
+    /^[\x20-\x7E]*$/.test(value) && value === value.trim() && !value.startsWith('=?base64?');
   if (plain) return value;
   return `=?base64?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 }
@@ -166,7 +178,11 @@ function encodeHeaderValue(value: string): string {
  * valid. Returns the tool unchanged when valid; otherwise returns null and a
  * reason (clients must exclude invalid tools from tools/list).
  */
-export function sanitizeToolHeaders(tool: ToolDefinition): { tool: ToolDefinition; valid: boolean; reason?: string } {
+export function sanitizeToolHeaders(tool: ToolDefinition): {
+  tool: ToolDefinition;
+  valid: boolean;
+  reason?: string;
+} {
   const inputSchema = tool.inputSchema;
   if (inputSchema === undefined) return { tool, valid: true };
   const result = validateToolHeaders(inputSchema);

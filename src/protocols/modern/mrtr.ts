@@ -1,4 +1,4 @@
-import { isRecord, asRecord } from './util.js';
+import { asRecord, isRecord } from './util.js';
 
 export interface InputRequiredResult {
   resultType: 'input_required';
@@ -43,7 +43,8 @@ export function buildInputRetryParams(
   inputResponses: InputResponses,
   requestState: string | undefined,
 ): Record<string, unknown> {
-  const base = originalParams !== undefined ? { ...(originalParams as Record<string, unknown>) } : {};
+  const base =
+    originalParams !== undefined ? { ...(originalParams as Record<string, unknown>) } : {};
   base.inputResponses = inputResponses;
   if (requestState !== undefined) base.requestState = requestState;
   return base;
@@ -57,10 +58,14 @@ export function buildInputRetryParams(
  * - `sampling/createMessage`/`sampling/create` → `accept` with a minimal message
  * - `roots/list` → `accept` with an empty root list
  */
-export function buildInputResponse(method: string | undefined, params: Record<string, unknown>): Record<string, unknown> {
+export function buildInputResponse(
+  method: string | undefined,
+  params: Record<string, unknown>,
+): Record<string, unknown> {
   switch (method) {
     case 'elicitation/create': {
-      const schema = (params.requestedSchema ?? params.schema) as Record<string, unknown> | undefined;
+      const schema = (params.requestedSchema ?? params.schema) as
+        Record<string, unknown> | undefined;
       return { action: 'accept', content: defaultContentForSchema(schema) };
     }
     case 'sampling/createMessage':
@@ -73,9 +78,13 @@ export function buildInputResponse(method: string | undefined, params: Record<st
   }
 }
 
-function defaultContentForSchema(schema: Record<string, unknown> | undefined): Record<string, unknown> {
+function defaultContentForSchema(
+  schema: Record<string, unknown> | undefined,
+): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  const properties = isRecord(schema?.properties) ? (schema?.properties as Record<string, unknown>) : undefined;
+  const properties = isRecord(schema?.properties)
+    ? (schema?.properties as Record<string, unknown>)
+    : undefined;
   if (properties === undefined) return out;
   for (const [key, raw] of Object.entries(properties)) {
     const prop = raw as Record<string, unknown>;

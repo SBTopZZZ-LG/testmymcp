@@ -1,15 +1,18 @@
-import { describe, expect, it } from 'vitest';
 import { spawn } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
-import { TestLevel } from '../../src/core/types/test-result.js';
 import { protocolAdapterFactory } from '../../src/core/protocol/factory.js';
-import { defaultRunOptions } from '../../src/engine/options.js';
+import { TestLevel } from '../../src/core/types/test-result.js';
 import { TestEngine } from '../../src/engine/engine.js';
+import { defaultRunOptions } from '../../src/engine/options.js';
 import { StreamableHttpTransport } from '../../src/transports/http/index.js';
 
-const fixturePath = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/modern-server.js');
+const fixturePath = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../fixtures/modern-server.js',
+);
 
 interface Fixture {
   port: number;
@@ -27,7 +30,10 @@ async function startFixture(flags: string[] = []): Promise<Fixture> {
   });
   await new Promise<void>((resolvePort, reject) => {
     let stderr = '';
-    const timer = setTimeout(() => reject(new Error(`modern fixture startup timed out; stderr: ${stderr}`)), 10_000);
+    const timer = setTimeout(
+      () => reject(new Error(`modern fixture startup timed out; stderr: ${stderr}`)),
+      10_000,
+    );
     child.stderr?.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');
       const match = /listening on (http:\/\/127\.0\.0\.1:\d+)/.exec(stderr);
@@ -52,8 +58,9 @@ async function startFixture(flags: string[] = []): Promise<Fixture> {
         if (child.exitCode !== null) return resolveKill();
         child.once('exit', () => resolveKill());
         if (process.platform === 'win32') {
-          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once('exit', () =>
-            setTimeout(resolveKill, 100),
+          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once(
+            'exit',
+            () => setTimeout(resolveKill, 100),
           );
         } else {
           child.kill('SIGTERM');
@@ -99,7 +106,12 @@ describe('modern engine integration over streamable HTTP', () => {
       expect(results.some((r) => r.status === 'fail')).toBe(false);
       expect(results.map((r) => r.id)).toContain('protocol discover');
       expect(engine.shared.session?.protocolVersion).toBe('2026-07-28');
-      expect(engine.shared.tools.map((t) => t.name).sort()).toEqual(['big_echo', 'echo', 'slow', 'sum']);
+      expect(engine.shared.tools.map((t) => t.name).sort()).toEqual([
+        'big_echo',
+        'echo',
+        'slow',
+        'sum',
+      ]);
       // Modern is stateless: no session id.
       expect(transport.sessionId).toBeUndefined();
     } finally {
@@ -111,13 +123,22 @@ describe('modern engine integration over streamable HTTP', () => {
     const fixture = await startFixture();
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 10_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 10_000,
+      });
       const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000 });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
       await adapter.initialize();
 
-      const result = (await adapter.request('tools/call', { name: 'ask', arguments: {} }, 8000)) as Record<string, unknown>;
+      const result = (await adapter.request(
+        'tools/call',
+        { name: 'ask', arguments: {} },
+        8000,
+      )) as Record<string, unknown>;
       expect(result.resultType).toBe('complete');
       expect(result.content).toBeDefined();
       await adapter.disconnect();
@@ -130,8 +151,17 @@ describe('modern engine integration over streamable HTTP', () => {
     const fixture = await startFixture(['--unsupported-version']);
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 10_000 });
-      const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000, preferVersion: '2026-07-28' });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 10_000,
+      });
+      const adapter = protocolAdapterFactory.create('modern', {
+        transport,
+        initTimeoutMs: 5000,
+        preferVersion: '2026-07-28',
+      });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
       await expect(adapter.initialize()).rejects.toMatchObject({ code: -32022 });
@@ -145,13 +175,24 @@ describe('modern engine integration over streamable HTTP', () => {
     const fixture = await startFixture(['--require-capability']);
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 10_000 });
-      const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000, preferVersion: '2026-07-28' });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 10_000,
+      });
+      const adapter = protocolAdapterFactory.create('modern', {
+        transport,
+        initTimeoutMs: 5000,
+        preferVersion: '2026-07-28',
+      });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
       // discovery is exempt; the server enforces the capability on subsequent methods.
       await adapter.initialize();
-      await expect(adapter.request('tools/list', undefined, 5000)).rejects.toMatchObject({ code: -32021 });
+      await expect(adapter.request('tools/list', undefined, 5000)).rejects.toMatchObject({
+        code: -32021,
+      });
       await adapter.disconnect();
     } finally {
       await fixture.kill();
@@ -162,7 +203,12 @@ describe('modern engine integration over streamable HTTP', () => {
     const fixture = await startFixture();
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 10_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 10_000,
+      });
       const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000 });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
@@ -174,9 +220,13 @@ describe('modern engine integration over streamable HTTP', () => {
       // Wait for the ack + push notifications (fixture pushes every 200ms).
       await new Promise((resolve) => setTimeout(resolve, 700));
       const notifications = sub.notifications;
-      expect(notifications.some((n) => n.method === 'notifications/subscriptions/acknowledged')).toBe(true);
+      expect(
+        notifications.some((n) => n.method === 'notifications/subscriptions/acknowledged'),
+      ).toBe(true);
       expect(notifications.some((n) => n.method === 'notifications/tools/list_changed')).toBe(true);
-      expect(notifications.some((n) => n.method === 'notifications/resources/list_changed')).toBe(true);
+      expect(notifications.some((n) => n.method === 'notifications/resources/list_changed')).toBe(
+        true,
+      );
 
       await sub.cancel();
       await adapter.disconnect();
@@ -189,7 +239,12 @@ describe('modern engine integration over streamable HTTP', () => {
     const fixture = await startFixture();
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 10_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 10_000,
+      });
       const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000 });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
@@ -218,7 +273,9 @@ describe('modern engine integration over streamable HTTP', () => {
       )) as Record<string, unknown>;
       expect(result.resultType).toBe('complete');
       const content = (result.content as Array<Record<string, unknown>>) ?? [];
-      const headerLine = content.find((c) => typeof c.text === 'string' && c.text.startsWith('headers='))?.text ?? '';
+      const headerLine =
+        content.find((c) => typeof c.text === 'string' && c.text.startsWith('headers='))?.text ??
+        '';
       // The server echoes the Mcp-Param-* headers it observed (lowercased keys).
       expect(headerLine).toContain('mcp-param-region');
       expect(headerLine).toContain('mcp-param-count');
@@ -236,18 +293,30 @@ describe('modern engine integration over streamable HTTP', () => {
     const fixture = await startFixture();
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 10_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 10_000,
+      });
       const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000 });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
       await adapter.initialize();
 
-      const created = (await adapter.request('tools/call', { name: 'slow', arguments: { label: 'hi' } }, 8000)) as Record<string, unknown>;
+      const created = (await adapter.request(
+        'tools/call',
+        { name: 'slow', arguments: { label: 'hi' } },
+        8000,
+      )) as Record<string, unknown>;
       expect(created.resultType).toBe('task');
       const taskId = typeof created.taskId === 'string' ? created.taskId : '';
       expect(taskId).not.toBe('');
 
-      const final = (await adapter.pollTask(taskId, { maxPollMs: 8000 })) as Record<string, unknown>;
+      const final = (await adapter.pollTask(taskId, { maxPollMs: 8000 })) as Record<
+        string,
+        unknown
+      >;
       expect(final.status).toBe('completed');
       expect(Array.isArray(final.content)).toBe(true);
 

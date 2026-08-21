@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+
 import type { TraceMessage, TraceStoreJson } from '../core/types/trace.js';
 
 function formatTimestamp(timestamp: number): string {
@@ -30,13 +31,17 @@ export async function runInspect(filePath: string): Promise<number> {
     const content = await readFile(filePath, 'utf8');
     parsed = JSON.parse(content);
   } catch (error) {
-    console.error(`inspect: cannot read trace file ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(
+      `inspect: cannot read trace file ${filePath}: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return 1;
   }
 
   const file = parsed as Partial<TraceStoreJson>;
   if (file?.kind !== 'mcp-trace' || !Array.isArray(file.messages)) {
-    console.error('inspect: not a testmymcp trace file (expected { "kind": "mcp-trace", "messages": [...] })');
+    console.error(
+      'inspect: not a testmymcp trace file (expected { "kind": "mcp-trace", "messages": [...] })',
+    );
     return 1;
   }
 

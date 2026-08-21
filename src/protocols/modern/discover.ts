@@ -1,6 +1,9 @@
-import { parseServerCapabilities, type ServerCapabilities } from '../../core/protocol/capabilities.js';
 import type { ServerInfo } from '../../core/protocol/adapter.js';
-import { isProtocolVersion, type ProtocolVersion } from '../../core/types/protocol.js';
+import {
+  type ServerCapabilities,
+  parseServerCapabilities,
+} from '../../core/protocol/capabilities.js';
+import { type ProtocolVersion, isProtocolVersion } from '../../core/types/protocol.js';
 
 export interface DiscoverResult {
   supportedVersions: string[];
@@ -41,7 +44,10 @@ export function parseDiscoverResult(result: unknown): DiscoverResult {
     serverInfo,
     instructions: typeof result.instructions === 'string' ? result.instructions : undefined,
     ttlMs: typeof result.ttlMs === 'number' ? result.ttlMs : undefined,
-    cacheScope: result.cacheScope === 'public' || result.cacheScope === 'private' ? result.cacheScope : undefined,
+    cacheScope:
+      result.cacheScope === 'public' || result.cacheScope === 'private'
+        ? result.cacheScope
+        : undefined,
     raw: result,
   };
 }

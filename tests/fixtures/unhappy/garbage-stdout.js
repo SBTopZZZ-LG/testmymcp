@@ -1,7 +1,7 @@
 // Unhappy fixture: emits garbage (non-JSON) on stdout on startup and before
 // every response, while otherwise serving normally. The client must flag the
 // framing violation yet continue (not hang).
-import { onLine, makeResult } from '../helpers/stdio.js';
+import { makeResult, onLine } from '../helpers/stdio.js';
 
 const INIT = {
   protocolVersion: '2025-11-25',

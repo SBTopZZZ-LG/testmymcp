@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { createIdGenerator } from '../../src/core/jsonrpc/id.js';
 
 describe('request id generator', () => {
@@ -15,7 +16,14 @@ describe('request id generator', () => {
 
   it('emits a mixed sequence that exercises both number and string ids', () => {
     const next = createIdGenerator('mixed');
-    expect([next(), next(), next(), next(), next(), next()]).toEqual([1, 2, 3, 'abc', 'tool-call-1', 'tool-call-2']);
+    expect([next(), next(), next(), next(), next(), next()]).toEqual([
+      1,
+      2,
+      3,
+      'abc',
+      'tool-call-1',
+      'tool-call-2',
+    ]);
   });
 
   it('emits large and odd ids', () => {

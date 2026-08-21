@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+
 import {
+  JSONRPC_ERROR_CODES,
   createErrorResponse,
   createNotification,
   createRequest,
@@ -7,7 +9,6 @@ import {
   isNotification,
   isRequest,
   isResponse,
-  JSONRPC_ERROR_CODES,
 } from '../../src/core/jsonrpc/messages.js';
 
 describe('JSON-RPC message guards', () => {
@@ -26,8 +27,12 @@ describe('JSON-RPC message guards', () => {
 
   it('recognizes responses and enforces result XOR error', () => {
     expect(isResponse(createResponse(1, { ok: true }))).toBe(true);
-    expect(isResponse(createErrorResponse(1, JSONRPC_ERROR_CODES.INTERNAL_ERROR, 'boom'))).toBe(true);
-    expect(isResponse({ jsonrpc: '2.0', id: 1, result: 1, error: { code: 1, message: 'x' } })).toBe(false);
+    expect(isResponse(createErrorResponse(1, JSONRPC_ERROR_CODES.INTERNAL_ERROR, 'boom'))).toBe(
+      true,
+    );
+    expect(isResponse({ jsonrpc: '2.0', id: 1, result: 1, error: { code: 1, message: 'x' } })).toBe(
+      false,
+    );
     expect(isResponse({ jsonrpc: '2.0', id: 1 })).toBe(false);
   });
 

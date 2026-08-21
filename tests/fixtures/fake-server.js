@@ -36,7 +36,12 @@ const tools = [
 ];
 
 const resources = [
-  { uri: 'file:///tmp/hello.txt', name: 'hello', description: 'a sample resource', mimeType: 'text/plain' },
+  {
+    uri: 'file:///tmp/hello.txt',
+    name: 'hello',
+    description: 'a sample resource',
+    mimeType: 'text/plain',
+  },
 ];
 
 const resourceTemplates = [{ uriTemplate: 'file:///{path}', name: 'generic file' }];
@@ -71,7 +76,11 @@ async function handle(message) {
     case 'initialize': {
       if (slowInit) await new Promise((resolve) => setTimeout(resolve, 400));
       const requested = message.params?.protocolVersion;
-      if (!acceptAnyVersion && typeof requested === 'string' && !SUPPORTED_VERSIONS.has(requested)) {
+      if (
+        !acceptAnyVersion &&
+        typeof requested === 'string' &&
+        !SUPPORTED_VERSIONS.has(requested)
+      ) {
         return errorFor(message, -32602, `unsupported protocol version: ${requested}`);
       }
       return resultFor(message, {
@@ -88,7 +97,10 @@ async function handle(message) {
         const pageSize = 1;
         const slice = tools.slice(page * pageSize, page * pageSize + pageSize);
         const hasMore = (page + 1) * pageSize < tools.length;
-        return resultFor(message, { tools: slice, nextCursor: hasMore ? String(page + 1) : undefined });
+        return resultFor(message, {
+          tools: slice,
+          nextCursor: hasMore ? String(page + 1) : undefined,
+        });
       }
       return resultFor(message, { tools });
 
@@ -100,12 +112,26 @@ async function handle(message) {
         if (!callArgs || typeof callArgs.a !== 'number' || typeof callArgs.b !== 'number') {
           return errorFor(message, -32602, 'invalid params: a and b must be integers');
         }
-        if (logOnCall) send({ jsonrpc: '2.0', method: 'notifications/logging/message', params: { level: 'info', logger: 'test', data: 'sum called' } });
-        return resultFor(message, { content: [{ type: 'text', text: String(callArgs.a + callArgs.b) }] });
+        if (logOnCall)
+          send({
+            jsonrpc: '2.0',
+            method: 'notifications/logging/message',
+            params: { level: 'info', logger: 'test', data: 'sum called' },
+          });
+        return resultFor(message, {
+          content: [{ type: 'text', text: String(callArgs.a + callArgs.b) }],
+        });
       }
       if (name === 'delete_file') {
-        if (logOnCall) send({ jsonrpc: '2.0', method: 'notifications/logging/message', params: { level: 'info', logger: 'test', data: 'delete_file called' } });
-        return resultFor(message, { content: [{ type: 'text', text: `deleted ${String(callArgs?.path ?? '?')}` }] });
+        if (logOnCall)
+          send({
+            jsonrpc: '2.0',
+            method: 'notifications/logging/message',
+            params: { level: 'info', logger: 'test', data: 'delete_file called' },
+          });
+        return resultFor(message, {
+          content: [{ type: 'text', text: `deleted ${String(callArgs?.path ?? '?')}` }],
+        });
       }
       return errorFor(message, -32602, `unknown tool: ${String(name ?? '?')}`);
     }
@@ -117,7 +143,10 @@ async function handle(message) {
         const pageSize = 1;
         const slice = resources.slice(page * pageSize, page * pageSize + pageSize);
         const hasMore = (page + 1) * pageSize < resources.length;
-        return resultFor(message, { resources: slice, nextCursor: hasMore ? String(page + 1) : undefined });
+        return resultFor(message, {
+          resources: slice,
+          nextCursor: hasMore ? String(page + 1) : undefined,
+        });
       }
       return resultFor(message, { resources });
 
@@ -129,7 +158,9 @@ async function handle(message) {
       return resultFor(message, { prompts });
 
     case 'completion/complete':
-      return resultFor(message, { completion: { values: ['alpha', 'beta', 'gamma'], hasMore: false, total: 3 } });
+      return resultFor(message, {
+        completion: { values: ['alpha', 'beta', 'gamma'], hasMore: false, total: 3 },
+      });
 
     case 'ping':
       return resultFor(message, {});

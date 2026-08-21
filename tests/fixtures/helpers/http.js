@@ -1,6 +1,5 @@
 // Shared helpers for HTTP (streamable) MCP fixture servers. Single-purpose
 // fixtures import these so matrix fixtures stay tiny (~80-150 lines).
-
 import http from 'node:http';
 
 export const DEFAULT_LEGACY_VERSION = '2025-11-25';
@@ -16,7 +15,12 @@ export function argsOf() {
   return { args, flag, value, port: Number(value('port', '8937')) };
 }
 
-export function responseHeaders({ version = DEFAULT_LEGACY_VERSION, method = '', name = 'fixture', sessionId } = {}) {
+export function responseHeaders({
+  version = DEFAULT_LEGACY_VERSION,
+  method = '',
+  name = 'fixture',
+  sessionId,
+} = {}) {
   const headers = {
     'MCP-Protocol-Version': version,
     'Mcp-Method': method,
@@ -63,7 +67,11 @@ export function readBody(req) {
   });
 }
 
-export const parseError = { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } };
+export const parseError = {
+  jsonrpc: '2.0',
+  id: null,
+  error: { code: -32700, message: 'parse error' },
+};
 
 export function makeResult(message, result) {
   return { jsonrpc: '2.0', id: message.id, result };
@@ -92,7 +100,8 @@ export function sessionHandler(respond, opts = {}) {
   const serverName = opts.name ?? 'fixture';
 
   return ({ message, headers, res, acceptsEventStream }) => {
-    const sessHeader = typeof headers['mcp-session-id'] === 'string' ? headers['mcp-session-id'] : undefined;
+    const sessHeader =
+      typeof headers['mcp-session-id'] === 'string' ? headers['mcp-session-id'] : undefined;
     let session = sessHeader ? sessions.get(sessHeader) : undefined;
 
     if (message.method === 'initialize' && !session) {
@@ -125,7 +134,14 @@ export function sessionHandler(respond, opts = {}) {
  * response itself and return null. A null return with nothing sent is treated
  * as an accepted notification (HTTP 202).
  */
-export function listen({ port, handler, reverseHandler, onStartup, version = DEFAULT_LEGACY_VERSION, name = 'fixture' }) {
+export function listen({
+  port,
+  handler,
+  reverseHandler,
+  onStartup,
+  version = DEFAULT_LEGACY_VERSION,
+  name = 'fixture',
+}) {
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
     if (url.pathname !== '/' || req.method !== 'POST') {
@@ -150,7 +166,18 @@ export function listen({ port, handler, reverseHandler, onStartup, version = DEF
       }
       const acepts = () => acceptsEventStream(req.headers.accept);
       const result = handler
-        ? handler({ message, headers: req.headers, req, res, url, jsonResponse, sseResponse, makeResult, makeError, acceptsEventStream: acepts() })
+        ? handler({
+            message,
+            headers: req.headers,
+            req,
+            res,
+            url,
+            jsonResponse,
+            sseResponse,
+            makeResult,
+            makeError,
+            acceptsEventStream: acepts(),
+          })
         : reverseHandler({ body, req, res, url, jsonResponse, sseResponse, makeResult, makeError });
       if (res.headersSent) return;
       if (result === null || result === undefined) {

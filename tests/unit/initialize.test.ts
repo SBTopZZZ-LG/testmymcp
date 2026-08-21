@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { buildInitializeParams, parseInitializeResult } from '../../src/protocols/legacy/initialize.js';
+
 import { emptyClientCapabilities } from '../../src/core/protocol/capabilities.js';
+import {
+  buildInitializeParams,
+  parseInitializeResult,
+} from '../../src/protocols/legacy/initialize.js';
 
 describe('legacy initialize', () => {
   it('builds negotiated params with client capabilities', () => {
     const params = buildInitializeParams({
       protocolVersion: '2025-11-25',
       clientInfo: { name: 't', version: '1' },
-      clientCapabilities: { ...emptyClientCapabilities(), roots: true, sampling: false, elicitation: false },
+      clientCapabilities: {
+        ...emptyClientCapabilities(),
+        roots: true,
+        sampling: false,
+        elicitation: false,
+      },
     }) as Record<string, unknown>;
     expect(params.protocolVersion).toBe('2025-11-25');
     expect(params.clientInfo).toEqual({ name: 't', version: '1' });
@@ -38,7 +47,9 @@ describe('legacy initialize', () => {
   });
 
   it('rejects unknown versions and non-object results', () => {
-    expect(() => parseInitializeResult({ protocolVersion: '2100-01-01' })).toThrow('unknown protocol version');
+    expect(() => parseInitializeResult({ protocolVersion: '2100-01-01' })).toThrow(
+      'unknown protocol version',
+    );
     expect(() => parseInitializeResult(null)).toThrow('not an object');
     expect(() => parseInitializeResult({})).toThrow('missing protocolVersion');
   });

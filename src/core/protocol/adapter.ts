@@ -38,7 +38,12 @@ export interface ProtocolAdapter {
   connect(): Promise<void>;
   initialize(options?: InitializeOptions): Promise<NegotiatedSession>;
   request<T = unknown>(method: string, params?: object, timeoutMs?: number): Promise<T>;
-  rawRequest<T = unknown>(id: JsonRpcId, method: string, params?: object, timeoutMs?: number): Promise<T>;
+  rawRequest<T = unknown>(
+    id: JsonRpcId,
+    method: string,
+    params?: object,
+    timeoutMs?: number,
+  ): Promise<T>;
   notify(method: string, params?: object): Promise<void>;
   shutdown(): Promise<void>;
   disconnect(): Promise<void>;

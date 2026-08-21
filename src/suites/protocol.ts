@@ -1,9 +1,9 @@
-import { TestLevel, type TestResult } from '../core/types/test-result.js';
-import { isProtocolVersion, eraOfVersion } from '../core/types/protocol.js';
-import { emptyClientCapabilities } from '../core/protocol/capabilities.js';
-import { pass, warn, fail, fromError } from '../engine/result.js';
-import type { SuiteContext } from '../engine/ctx.js';
 import { JsonRpcRemoteError } from '../core/jsonrpc/multiplexer.js';
+import { emptyClientCapabilities } from '../core/protocol/capabilities.js';
+import { eraOfVersion, isProtocolVersion } from '../core/types/protocol.js';
+import { TestLevel, type TestResult } from '../core/types/test-result.js';
+import type { SuiteContext } from '../engine/ctx.js';
+import { fail, fromError, pass, warn } from '../engine/result.js';
 import { buildInitializeParams } from '../protocols/legacy/initialize.js';
 
 const UNKNOWN_VERSION_PROBE = '2099-01-01';
@@ -41,10 +41,16 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
       }),
     );
     results.push(
-      warn('protocol remaining-skipped', 'protocol', TestLevel.Protocol, 'skipped because initialize failed', {
-        transport,
-        durationMs: 0,
-      }),
+      warn(
+        'protocol remaining-skipped',
+        'protocol',
+        TestLevel.Protocol,
+        'skipped because initialize failed',
+        {
+          transport,
+          durationMs: 0,
+        },
+      ),
     );
     return results;
   }
@@ -80,7 +86,10 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
     );
   }
 
-  if (!isProtocolVersion(session.protocolVersion) || eraOfVersion(session.protocolVersion) === null) {
+  if (
+    !isProtocolVersion(session.protocolVersion) ||
+    eraOfVersion(session.protocolVersion) === null
+  ) {
     results.push(
       fail(
         'protocol version-known',
@@ -113,11 +122,17 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
     );
   } else {
     results.push(
-      warn('protocol server-info', 'protocol', TestLevel.Protocol, 'server did not identify itself (serverInfo.name missing)', {
-        protocol: session.protocolVersion,
-        transport,
-        durationMs: 0,
-      }),
+      warn(
+        'protocol server-info',
+        'protocol',
+        TestLevel.Protocol,
+        'server did not identify itself (serverInfo.name missing)',
+        {
+          protocol: session.protocolVersion,
+          transport,
+          durationMs: 0,
+        },
+      ),
     );
   }
 
@@ -132,11 +147,17 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
     );
   } else {
     results.push(
-      warn('protocol capabilities', 'protocol', TestLevel.Protocol, 'server did not advertise any capabilities', {
-        protocol: session.protocolVersion,
-        transport,
-        durationMs: 0,
-      }),
+      warn(
+        'protocol capabilities',
+        'protocol',
+        TestLevel.Protocol,
+        'server did not advertise any capabilities',
+        {
+          protocol: session.protocolVersion,
+          transport,
+          durationMs: 0,
+        },
+      ),
     );
   }
 
@@ -173,10 +194,17 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
       );
     } else {
       results.push(
-        fromError('protocol pre-initialized-traffic', 'protocol', TestLevel.Protocol, error, 'transport', {
-          transport,
-          durationMs: ctx.now() - preStarted,
-        }),
+        fromError(
+          'protocol pre-initialized-traffic',
+          'protocol',
+          TestLevel.Protocol,
+          error,
+          'transport',
+          {
+            transport,
+            durationMs: ctx.now() - preStarted,
+          },
+        ),
       );
     }
   }
@@ -205,16 +233,27 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
             warnings: ['server rejected duplicate initialize'],
             evidence: { code: error.code, message: error.message },
           })
-        : fromError('protocol duplicate-initialize', 'protocol', TestLevel.Protocol, error, 'transport', {
-            transport,
-            durationMs: ctx.now() - dupStarted,
-          }),
+        : fromError(
+            'protocol duplicate-initialize',
+            'protocol',
+            TestLevel.Protocol,
+            error,
+            'transport',
+            {
+              transport,
+              durationMs: ctx.now() - dupStarted,
+            },
+          ),
     );
   }
 
   const bogusStarted = ctx.now();
   try {
-    const bogus = await ctx.adapter.request('initialize', paramsFor(UNKNOWN_VERSION_PROBE), requestTimeout);
+    const bogus = await ctx.adapter.request(
+      'initialize',
+      paramsFor(UNKNOWN_VERSION_PROBE),
+      requestTimeout,
+    );
     results.push(
       warn(
         'protocol unsupported-version',
@@ -236,10 +275,17 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
       );
     } else {
       results.push(
-        fromError('protocol unsupported-version', 'protocol', TestLevel.Protocol, error, 'transport', {
-          transport,
-          durationMs: ctx.now() - bogusStarted,
-        }),
+        fromError(
+          'protocol unsupported-version',
+          'protocol',
+          TestLevel.Protocol,
+          error,
+          'transport',
+          {
+            transport,
+            durationMs: ctx.now() - bogusStarted,
+          },
+        ),
       );
     }
   }
@@ -257,7 +303,9 @@ export async function runProtocolSuite(ctx: SuiteContext): Promise<TestResult[]>
       ),
     );
   } else {
-    results.push(pass('protocol stdout-framing', 'protocol', TestLevel.Protocol, { transport, durationMs: 0 }));
+    results.push(
+      pass('protocol stdout-framing', 'protocol', TestLevel.Protocol, { transport, durationMs: 0 }),
+    );
   }
 
   if (ctx.observed.oversize.length > 0) {

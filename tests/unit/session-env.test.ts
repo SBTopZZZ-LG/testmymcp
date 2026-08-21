@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   SECRET_ENV_SENTINEL,
   expandStoredEnv,

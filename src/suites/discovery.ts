@@ -1,4 +1,3 @@
-import { TestLevel, type TestResult } from '../core/types/test-result.js';
 import {
   type PromptDefinition,
   type ResourceDefinition,
@@ -6,10 +5,11 @@ import {
   type ToolDefinition,
 } from '../core/primitives/types.js';
 import { isValidSchema } from '../core/schemas/validator.js';
-import { validateToolHeaders } from '../transports/http/x-mcp-header.js';
-import { pass, warn, skip, fromError } from '../engine/result.js';
 import type { TransportType } from '../core/types/protocol.js';
+import { TestLevel, type TestResult } from '../core/types/test-result.js';
 import type { SuiteContext } from '../engine/ctx.js';
+import { fromError, pass, skip, warn } from '../engine/result.js';
+import { validateToolHeaders } from '../transports/http/x-mcp-header.js';
 
 interface ListResult {
   items: unknown[];
@@ -37,7 +37,10 @@ async function collectList(
     pages += 1;
     if (pages > maxPages) return { items, pages, looped: false, truncated: true, firstRaw };
     const callParams = cursor !== undefined ? { ...(params ?? {}), cursor } : params;
-    const data = (await ctx.adapter.request(method, callParams, requestTimeout)) as Record<string, unknown>;
+    const data = (await ctx.adapter.request(method, callParams, requestTimeout)) as Record<
+      string,
+      unknown
+    >;
     if (firstRaw === undefined) firstRaw = data;
     const batch = Array.isArray(data[itemKey]) ? data[itemKey] : [];
     for (const item of batch) items.push(item);
@@ -54,35 +57,58 @@ async function collectList(
  * as a warning (caching hints are recommended); when present, `ttlMs` must be a
  * non-negative integer and `cacheScope` one of `public`/`private`.
  */
-function checkCaching(id: string, raw: Record<string, unknown> | undefined, results: TestResult[], transport: TransportType): void {
+function checkCaching(
+  id: string,
+  raw: Record<string, unknown> | undefined,
+  results: TestResult[],
+  transport: TransportType,
+): void {
   if (!isRecord(raw)) return;
   const ttl = raw.ttlMs;
   const scope = raw.cacheScope;
   if (ttl === undefined && scope === undefined) {
     results.push(
-      warn(`${id} caching-hint`, 'discovery', TestLevel.Discovery, 'list result omits ttlMs/cacheScope caching hints', {
-        transport,
-        durationMs: 0,
-      }),
+      warn(
+        `${id} caching-hint`,
+        'discovery',
+        TestLevel.Discovery,
+        'list result omits ttlMs/cacheScope caching hints',
+        {
+          transport,
+          durationMs: 0,
+        },
+      ),
     );
     return;
   }
   if (ttl !== undefined && (typeof ttl !== 'number' || !Number.isInteger(ttl) || ttl < 0)) {
     results.push(
-      warn(`${id} caching-ttl`, 'discovery', TestLevel.Discovery, `ttlMs is not a non-negative integer: ${JSON.stringify(ttl)}`, {
-        transport,
-        durationMs: 0,
-        evidence: raw,
-      }),
+      warn(
+        `${id} caching-ttl`,
+        'discovery',
+        TestLevel.Discovery,
+        `ttlMs is not a non-negative integer: ${JSON.stringify(ttl)}`,
+        {
+          transport,
+          durationMs: 0,
+          evidence: raw,
+        },
+      ),
     );
   }
   if (scope !== undefined && scope !== 'public' && scope !== 'private') {
     results.push(
-      warn(`${id} caching-scope`, 'discovery', TestLevel.Discovery, `cacheScope is not "public"/"private": ${JSON.stringify(scope)}`, {
-        transport,
-        durationMs: 0,
-        evidence: raw,
-      }),
+      warn(
+        `${id} caching-scope`,
+        'discovery',
+        TestLevel.Discovery,
+        `cacheScope is not "public"/"private": ${JSON.stringify(scope)}`,
+        {
+          transport,
+          durationMs: 0,
+          evidence: raw,
+        },
+      ),
     );
   }
   results.push(
@@ -105,7 +131,12 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
   const transport = ctx.transport;
 
   if (ctx.shared.session === undefined) {
-    results.push(skip('discovery skipped', 'discovery', TestLevel.Discovery, 'no negotiated session', { transport, durationMs: 0 }));
+    results.push(
+      skip('discovery skipped', 'discovery', TestLevel.Discovery, 'no negotiated session', {
+        transport,
+        durationMs: 0,
+      }),
+    );
     return results;
   }
   const caps = ctx.shared.session.serverCapabilities;
@@ -124,19 +155,26 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
         const name = typeof raw.name === 'string' ? raw.name.trim() : '';
         if (name === '') {
           results.push(
-            warn('tools/list item-name', 'discovery', TestLevel.Discovery, 'tool without a name string', {
-              transport,
-              durationMs: 0,
-              evidence: raw,
-            }),
+            warn(
+              'tools/list item-name',
+              'discovery',
+              TestLevel.Discovery,
+              'tool without a name string',
+              {
+                transport,
+                durationMs: 0,
+                evidence: raw,
+              },
+            ),
           );
           continue;
         }
         if (names.has(name)) duplicateNames += 1;
         names.add(name);
-        const headerCheck = raw.inputSchema === undefined || raw.inputSchema === null
-          ? undefined
-          : validateToolHeaders(raw.inputSchema);
+        const headerCheck =
+          raw.inputSchema === undefined || raw.inputSchema === null
+            ? undefined
+            : validateToolHeaders(raw.inputSchema);
         if (headerCheck && !headerCheck.valid) {
           results.push(
             warn(
@@ -158,25 +196,41 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
       }
       if (duplicateNames > 0) {
         results.push(
-          warn('tools/list duplicate-names', 'discovery', TestLevel.Discovery, `${duplicateNames} duplicate tool name(s)`, {
-            transport,
-            durationMs: 0,
-          }),
+          warn(
+            'tools/list duplicate-names',
+            'discovery',
+            TestLevel.Discovery,
+            `${duplicateNames} duplicate tool name(s)`,
+            {
+              transport,
+              durationMs: 0,
+            },
+          ),
         );
       }
       if (list.looped) {
         results.push(
-          warn('tools/list pagination-loop', 'discovery', TestLevel.Discovery, 'nextCursor repeated its value (pagination loop)', {
-            transport,
-            durationMs: 0,
-          }),
+          warn(
+            'tools/list pagination-loop',
+            'discovery',
+            TestLevel.Discovery,
+            'nextCursor repeated its value (pagination loop)',
+            {
+              transport,
+              durationMs: 0,
+            },
+          ),
         );
       }
       if (list.truncated) {
         results.push(
-          warn('tools/list pagination-truncated', 'discovery', TestLevel.Discovery,
+          warn(
+            'tools/list pagination-truncated',
+            'discovery',
+            TestLevel.Discovery,
             `pagination did not terminate; capped at ${list.pages} pages`,
-            { transport, durationMs: 0 }),
+            { transport, durationMs: 0 },
+          ),
         );
       }
       results.push(
@@ -216,7 +270,12 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
       ctx.shared.tools = [];
     }
   } else {
-    results.push(skip('tools/list', 'discovery', TestLevel.Discovery, 'server does not advertise tools', { transport, durationMs: 0 }));
+    results.push(
+      skip('tools/list', 'discovery', TestLevel.Discovery, 'server does not advertise tools', {
+        transport,
+        durationMs: 0,
+      }),
+    );
   }
 
   if (caps.resources) {
@@ -228,20 +287,32 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
         const uri = typeof raw.uri === 'string' ? raw.uri : '';
         if (uri === '') {
           results.push(
-            warn('resources/list item-uri', 'discovery', TestLevel.Discovery, 'resource without a uri string', {
-              transport,
-              durationMs: 0,
-              evidence: raw,
-            }),
+            warn(
+              'resources/list item-uri',
+              'discovery',
+              TestLevel.Discovery,
+              'resource without a uri string',
+              {
+                transport,
+                durationMs: 0,
+                evidence: raw,
+              },
+            ),
           );
           continue;
         }
         if (!URI_SCHEME.test(uri)) {
           results.push(
-            warn('resources/list item-scheme', 'discovery', TestLevel.Discovery, `resource uri has no recognized scheme: ${uri}`, {
-              transport,
-              durationMs: 0,
-            }),
+            warn(
+              'resources/list item-scheme',
+              'discovery',
+              TestLevel.Discovery,
+              `resource uri has no recognized scheme: ${uri}`,
+              {
+                transport,
+                durationMs: 0,
+              },
+            ),
           );
         }
         resources.push({
@@ -254,9 +325,13 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
       ctx.shared.resources = resources;
       if (list.truncated) {
         results.push(
-          warn('resources/list pagination-truncated', 'discovery', TestLevel.Discovery,
+          warn(
+            'resources/list pagination-truncated',
+            'discovery',
+            TestLevel.Discovery,
             `pagination did not terminate; capped at ${list.pages} pages`,
-            { transport, durationMs: 0 }),
+            { transport, durationMs: 0 },
+          ),
         );
       }
       results.push(
@@ -269,12 +344,20 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
       checkCaching('resources/list', list.firstRaw, results, transport);
     } catch (error) {
       results.push(
-        fromError('resources/list', 'discovery', TestLevel.Discovery, error, 'protocol', { transport, durationMs: 0 }),
+        fromError('resources/list', 'discovery', TestLevel.Discovery, error, 'protocol', {
+          transport,
+          durationMs: 0,
+        }),
       );
     }
 
     try {
-      const templates = await collectList(ctx, 'resources/templates/list', 'resourceTemplates', undefined);
+      const templates = await collectList(
+        ctx,
+        'resources/templates/list',
+        'resourceTemplates',
+        undefined,
+      );
       const parsedTemplates: ResourceTemplateDefinition[] = [];
       for (const raw of templates.items) {
         if (!isRecord(raw)) continue;
@@ -302,20 +385,36 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
       const remote = error instanceof Error ? error.message : String(error);
       if (remote.includes('method not found')) {
         results.push(
-          warn('resources/templates/list', 'discovery', TestLevel.Discovery, 'server does not support resource templates', {
-            transport,
-            durationMs: 0,
-          }),
+          warn(
+            'resources/templates/list',
+            'discovery',
+            TestLevel.Discovery,
+            'server does not support resource templates',
+            {
+              transport,
+              durationMs: 0,
+            },
+          ),
         );
       } else {
         results.push(
-          fromError('resources/templates/list', 'discovery', TestLevel.Discovery, error, 'protocol', { transport, durationMs: 0 }),
+          fromError(
+            'resources/templates/list',
+            'discovery',
+            TestLevel.Discovery,
+            error,
+            'protocol',
+            { transport, durationMs: 0 },
+          ),
         );
       }
     }
   } else {
     results.push(
-      skip('resources', 'discovery', TestLevel.Discovery, 'server does not advertise resources', { transport, durationMs: 0 }),
+      skip('resources', 'discovery', TestLevel.Discovery, 'server does not advertise resources', {
+        transport,
+        durationMs: 0,
+      }),
     );
   }
 
@@ -329,15 +428,29 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
         const name = typeof raw.name === 'string' ? raw.name.trim() : '';
         if (name === '') {
           results.push(
-            warn('prompts/list item-name', 'discovery', TestLevel.Discovery, 'prompt without a name string', {
-              transport,
-              durationMs: 0,
-            }),
+            warn(
+              'prompts/list item-name',
+              'discovery',
+              TestLevel.Discovery,
+              'prompt without a name string',
+              {
+                transport,
+                durationMs: 0,
+              },
+            ),
           );
           continue;
         }
         if (names.has(name)) {
-          results.push(warn('prompts/list duplicate-names', 'discovery', TestLevel.Discovery, `duplicate prompt name: ${name}`, { transport, durationMs: 0 }));
+          results.push(
+            warn(
+              'prompts/list duplicate-names',
+              'discovery',
+              TestLevel.Discovery,
+              `duplicate prompt name: ${name}`,
+              { transport, durationMs: 0 },
+            ),
+          );
         }
         names.add(name);
         prompts.push({
@@ -358,9 +471,13 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
       ctx.shared.prompts = prompts;
       if (list.truncated) {
         results.push(
-          warn('prompts/list pagination-truncated', 'discovery', TestLevel.Discovery,
+          warn(
+            'prompts/list pagination-truncated',
+            'discovery',
+            TestLevel.Discovery,
             `pagination did not terminate; capped at ${list.pages} pages`,
-            { transport, durationMs: 0 }),
+            { transport, durationMs: 0 },
+          ),
         );
       }
       results.push(
@@ -372,11 +489,19 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
       );
       checkCaching('prompts/list', list.firstRaw, results, transport);
     } catch (error) {
-      results.push(fromError('prompts/list', 'discovery', TestLevel.Discovery, error, 'protocol', { transport, durationMs: 0 }));
+      results.push(
+        fromError('prompts/list', 'discovery', TestLevel.Discovery, error, 'protocol', {
+          transport,
+          durationMs: 0,
+        }),
+      );
     }
   } else {
     results.push(
-      skip('prompts', 'discovery', TestLevel.Discovery, 'server does not advertise prompts', { transport, durationMs: 0 }),
+      skip('prompts', 'discovery', TestLevel.Discovery, 'server does not advertise prompts', {
+        transport,
+        durationMs: 0,
+      }),
     );
   }
 
@@ -392,13 +517,22 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
           },
           requestTimeout,
         )) as Record<string, unknown>;
-        const values = isRecord(completion.completion) && Array.isArray(completion.completion.values) ? completion.completion.values : [];
+        const values =
+          isRecord(completion.completion) && Array.isArray(completion.completion.values)
+            ? completion.completion.values
+            : [];
         if (values.length > 100) {
           results.push(
-            warn('completion/complete', 'discovery', TestLevel.Discovery, `completion returned ${values.length} suggestions (limit is 100)`, {
-              transport,
-              durationMs: 0,
-            }),
+            warn(
+              'completion/complete',
+              'discovery',
+              TestLevel.Discovery,
+              `completion returned ${values.length} suggestions (limit is 100)`,
+              {
+                transport,
+                durationMs: 0,
+              },
+            ),
           );
         } else {
           results.push(
@@ -411,17 +545,29 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
         }
       } catch (error) {
         results.push(
-          fromError('completion/complete', 'discovery', TestLevel.Discovery, error, 'protocol', { transport, durationMs: 0 }),
+          fromError('completion/complete', 'discovery', TestLevel.Discovery, error, 'protocol', {
+            transport,
+            durationMs: 0,
+          }),
         );
       }
     } else {
       results.push(
-        skip('completion/complete', 'discovery', TestLevel.Discovery, 'no prompt available to complete', { transport, durationMs: 0 }),
+        skip(
+          'completion/complete',
+          'discovery',
+          TestLevel.Discovery,
+          'no prompt available to complete',
+          { transport, durationMs: 0 },
+        ),
       );
     }
   } else {
     results.push(
-      skip('completion', 'discovery', TestLevel.Discovery, 'server does not advertise completion', { transport, durationMs: 0 }),
+      skip('completion', 'discovery', TestLevel.Discovery, 'server does not advertise completion', {
+        transport,
+        durationMs: 0,
+      }),
     );
   }
 
@@ -429,7 +575,9 @@ export async function runDiscoverySuite(ctx: SuiteContext): Promise<TestResult[]
 }
 
 function setToolSchemas(ctx: SuiteContext, tools: readonly ToolDefinition[]): void {
-  const setter = (ctx.adapter as { setToolSchemas?(s: Array<{ name: string; inputSchema?: unknown }>): void }).setToolSchemas;
+  const setter = (
+    ctx.adapter as { setToolSchemas?(s: Array<{ name: string; inputSchema?: unknown }>): void }
+  ).setToolSchemas;
   if (typeof setter === 'function') {
     setter.call(
       ctx.adapter,

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+
 import {
-  eraOfVersion,
-  isProtocolVersion,
   LEGACY_PROTOCOL_VERSIONS,
   MODERN_PROTOCOL_VERSIONS,
   PROTOCOL_VERSIONS,
+  eraOfVersion,
+  isProtocolVersion,
   sortKnownVersions,
 } from '../../src/core/types/protocol.js';
 

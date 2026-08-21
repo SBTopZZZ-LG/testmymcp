@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { createModernProtocolAdapter, type ModernAdapterOptions } from '../../src/protocols/modern/adapter.js';
-import { createResponse, createErrorResponse, type JsonRpcId } from '../../src/core/jsonrpc/messages.js';
+
+import {
+  type JsonRpcId,
+  createErrorResponse,
+  createResponse,
+} from '../../src/core/jsonrpc/messages.js';
+import {
+  type ModernAdapterOptions,
+  createModernProtocolAdapter,
+} from '../../src/protocols/modern/adapter.js';
 import type { ExitInfo, Transport, TransportObserver } from '../../src/transports/transport.js';
 
 class FakeTransport implements Transport {
@@ -84,7 +92,9 @@ describe('ModernProtocolAdapter', () => {
     expect(session.serverCapabilities.toolListChanged).toBe(true);
     expect(adapter.state).toBe('operational');
     // No notifications/initialized in modern.
-    expect(transport.sent.some((m) => (m as { method?: string }).method === 'notifications/initialized')).toBe(false);
+    expect(
+      transport.sent.some((m) => (m as { method?: string }).method === 'notifications/initialized'),
+    ).toBe(false);
   });
 
   it('attaches required _meta fields to every request', async () => {
@@ -99,7 +109,14 @@ describe('ModernProtocolAdapter', () => {
     expect(meta?.['io.modelcontextprotocol/clientCapabilities']).toBeDefined();
     expect(meta?.['io.modelcontextprotocol/clientInfo']).toBeDefined();
 
-    transport.observer?.onMessage?.(createResponse(asId(transport.sent[0]), { resultType: 'complete', tools: [], ttlMs: 1000, cacheScope: 'public' }));
+    transport.observer?.onMessage?.(
+      createResponse(asId(transport.sent[0]), {
+        resultType: 'complete',
+        tools: [],
+        ttlMs: 1000,
+        cacheScope: 'public',
+      }),
+    );
     await p;
   });
 
@@ -109,7 +126,12 @@ describe('ModernProtocolAdapter', () => {
     await adapter.connect();
 
     const p = adapter.request('server/discover', undefined, 2000);
-    transport.observer?.onMessage?.(createErrorResponse(asId(transport.sent[0]), -32022, 'Unsupported protocol version', { supported: ['2026-07-28'], requested: '2099-01-01' }));
+    transport.observer?.onMessage?.(
+      createErrorResponse(asId(transport.sent[0]), -32022, 'Unsupported protocol version', {
+        supported: ['2026-07-28'],
+        requested: '2099-01-01',
+      }),
+    );
     await expect(p).rejects.toMatchObject({ name: 'JsonRpcRemoteError', code: -32022 });
   });
 
@@ -125,7 +147,9 @@ describe('ModernProtocolAdapter', () => {
     transport.observer?.onMessage?.(
       createResponse(firstId, {
         resultType: 'input_required',
-        inputRequests: { confirm: { method: 'elicitation/create', params: { mode: 'form', message: 'confirm' } } },
+        inputRequests: {
+          confirm: { method: 'elicitation/create', params: { mode: 'form', message: 'confirm' } },
+        },
         requestState: 'state-1',
       }),
     );
@@ -140,7 +164,11 @@ describe('ModernProtocolAdapter', () => {
     expect(secondParams.requestState).toBe('state-1');
 
     transport.observer?.onMessage?.(
-      createResponse(asId(second), { resultType: 'complete', content: [{ type: 'text', text: 'confirmed' }], evidence: secondParams.requestState }),
+      createResponse(asId(second), {
+        resultType: 'complete',
+        content: [{ type: 'text', text: 'confirmed' }],
+        evidence: secondParams.requestState,
+      }),
     );
     const result = (await p) as Record<string, unknown>;
     expect(result.evidence).toBe('state-1');
@@ -158,6 +186,8 @@ describe('ModernProtocolAdapter', () => {
     await adapter.shutdown();
     expect(adapter.state).toBe('closed');
     expect(transport.stopped).toBe(true);
-    expect(transport.sent.some((m) => (m as { method?: string }).method === 'notifications/shutdown')).toBe(false);
+    expect(
+      transport.sent.some((m) => (m as { method?: string }).method === 'notifications/shutdown'),
+    ).toBe(false);
   });
 });

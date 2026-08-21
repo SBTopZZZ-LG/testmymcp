@@ -1,11 +1,19 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
-import { runInspect } from './inspect.js';
-import { registerSessionCommands } from './session.js';
-import { runStdio, type StdioCommandOptions } from './stdio.js';
-import { runHttp, type HttpCommandOptions } from './http.js';
-import { parseLevel, parseMode, parseEra, parseProtocolVersion, parseHttpTransport, parseHttpAccept } from './parse.js';
+
 import { parseEnvEntries } from '../sessions/env.js';
+import { type HttpCommandOptions, runHttp } from './http.js';
+import { runInspect } from './inspect.js';
+import {
+  parseEra,
+  parseHttpAccept,
+  parseHttpTransport,
+  parseLevel,
+  parseMode,
+  parseProtocolVersion,
+} from './parse.js';
+import { registerSessionCommands } from './session.js';
+import { type StdioCommandOptions, runStdio } from './stdio.js';
 
 function collectEnv(value: string, previous: string[]): string[] {
   return previous.concat([value]);
@@ -48,7 +56,10 @@ program
         timeoutMs: Number.parseInt(commandOptions.timeout ?? '30000', 10) || 30000,
         showSecrets: Boolean(commandOptions.showSecrets),
         era: parseEra(commandOptions.era ?? 'legacy'),
-        preferVersion: commandOptions.protocolVersion !== undefined ? parseProtocolVersion(commandOptions.protocolVersion) : undefined,
+        preferVersion:
+          commandOptions.protocolVersion !== undefined
+            ? parseProtocolVersion(commandOptions.protocolVersion)
+            : undefined,
         env: parseEnvEntries(commandOptions.env ?? []),
         maxSchemaBytes:
           commandOptions.maxSchemaSize !== undefined
@@ -69,7 +80,11 @@ program
 program
   .command('http <url>')
   .description('test an MCP server over streamable HTTP or legacy SSE')
-  .option('--transport <transport>', 'HTTP transport: streamable-http, legacy-sse', 'streamable-http')
+  .option(
+    '--transport <transport>',
+    'HTTP transport: streamable-http, legacy-sse',
+    'streamable-http',
+  )
   .option('--mode <mode>', 'tool execution policy: safe, readonly, all', 'safe')
   .option('--level <n>', 'highest test level to run (0-7, default 3)', '3')
   .option('--json', 'emit a machine-readable JSON report')
@@ -92,7 +107,10 @@ program
         token: commandOptions.token !== undefined ? commandOptions.token : undefined,
         accept: parseHttpAccept(commandOptions.accept),
         era: parseEra(commandOptions.era ?? 'legacy'),
-        version: commandOptions.protocolVersion !== undefined ? parseProtocolVersion(commandOptions.protocolVersion) : undefined,
+        version:
+          commandOptions.protocolVersion !== undefined
+            ? parseProtocolVersion(commandOptions.protocolVersion)
+            : undefined,
       };
       process.exitCode = await runHttp(options);
     } catch (error) {
@@ -105,7 +123,9 @@ program
   .command('scan <url>')
   .description('security and agent-safety scan of an MCP server')
   .action(() => {
-    console.error('testmymcp: the security scanner ships in Phase 5 of the build plan (see BLUEPRINT.md).');
+    console.error(
+      'testmymcp: the security scanner ships in Phase 5 of the build plan (see BLUEPRINT.md).',
+    );
     process.exitCode = 2;
   });
 

@@ -20,7 +20,15 @@ rl.on('line', (line) => {
   if (message.id === undefined) return;
   if (message.method === 'initialize') {
     setTimeout(() => {
-      send({ jsonrpc: '2.0', id: message.id, result: { protocolVersion: '2025-11-25', serverInfo: { name: 'slow-init', version: '1.0.0' }, capabilities: { tools: {} } } });
+      send({
+        jsonrpc: '2.0',
+        id: message.id,
+        result: {
+          protocolVersion: '2025-11-25',
+          serverInfo: { name: 'slow-init', version: '1.0.0' },
+          capabilities: { tools: {} },
+        },
+      });
     }, 800);
     return;
   }

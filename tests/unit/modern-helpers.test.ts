@@ -1,25 +1,36 @@
 import { describe, expect, it } from 'vitest';
-import { buildRequestMeta, withRequestMeta } from '../../src/protocols/modern/request-meta.js';
-import { parseDiscoverResult, selectSupportedVersion } from '../../src/protocols/modern/discover.js';
+
+import { emptyClientCapabilities } from '../../src/core/protocol/capabilities.js';
 import {
-  isInputRequiredResult,
-  buildInputRetryParams,
+  parseDiscoverResult,
+  selectSupportedVersion,
+} from '../../src/protocols/modern/discover.js';
+import {
   buildInputResponse,
+  buildInputRetryParams,
+  isInputRequiredResult,
   parseInputRequests,
   parseRequestState,
 } from '../../src/protocols/modern/mrtr.js';
+import { buildRequestMeta, withRequestMeta } from '../../src/protocols/modern/request-meta.js';
 import { isTaskResult } from '../../src/protocols/modern/result.js';
-import { emptyClientCapabilities } from '../../src/core/protocol/capabilities.js';
 
 describe('modern request-meta', () => {
   it('builds per-request meta with required fields', () => {
     const meta = buildRequestMeta({
       protocolVersion: '2026-07-28',
       clientInfo: { name: 'testmymcp', version: '0.1.0' },
-      clientCapabilities: { ...emptyClientCapabilities(), elicitation: true, elicitationForm: true },
+      clientCapabilities: {
+        ...emptyClientCapabilities(),
+        elicitation: true,
+        elicitationForm: true,
+      },
     });
     expect(meta['io.modelcontextprotocol/protocolVersion']).toBe('2026-07-28');
-    expect(meta['io.modelcontextprotocol/clientInfo']).toEqual({ name: 'testmymcp', version: '0.1.0' });
+    expect(meta['io.modelcontextprotocol/clientInfo']).toEqual({
+      name: 'testmymcp',
+      version: '0.1.0',
+    });
     const caps = meta['io.modelcontextprotocol/clientCapabilities'] as Record<string, unknown>;
     expect(caps.elicitation).toEqual({ form: {} });
   });
@@ -27,7 +38,11 @@ describe('modern request-meta', () => {
   it('withRequestMeta merges params and injects _meta', () => {
     const out = withRequestMeta(
       { name: 'x', arguments: {} },
-      { protocolVersion: '2026-07-28', clientInfo: {}, clientCapabilities: emptyClientCapabilities() },
+      {
+        protocolVersion: '2026-07-28',
+        clientInfo: {},
+        clientCapabilities: emptyClientCapabilities(),
+      },
     );
     expect(out?.name).toBe('x');
     expect(out?._meta).toBeDefined();
@@ -83,7 +98,11 @@ describe('modern mrtr', () => {
   });
 
   it('builds retry params echoing requestState + inputResponses', () => {
-    const out = buildInputRetryParams({ name: 'x', arguments: {} }, { confirm: { action: 'accept', content: {} } }, 'opaque-state');
+    const out = buildInputRetryParams(
+      { name: 'x', arguments: {} },
+      { confirm: { action: 'accept', content: {} } },
+      'opaque-state',
+    );
     expect(out.requestState).toBe('opaque-state');
     expect(out.inputResponses).toEqual({ confirm: { action: 'accept', content: {} } });
     expect(out.name).toBe('x');
@@ -96,7 +115,10 @@ describe('modern mrtr', () => {
   describe('buildInputResponse fidelity', () => {
     it('answers elicitation/create with sample content from the schema', () => {
       const out = buildInputResponse('elicitation/create', {
-        requestedSchema: { type: 'object', properties: { ok: { type: 'boolean' }, name: { type: 'string' }, n: { type: 'integer' } } },
+        requestedSchema: {
+          type: 'object',
+          properties: { ok: { type: 'boolean' }, name: { type: 'string' }, n: { type: 'integer' } },
+        },
       });
       expect(out.action).toBe('accept');
       expect(out.content).toEqual({ ok: true, name: '', n: 0 });

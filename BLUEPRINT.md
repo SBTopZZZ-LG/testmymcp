@@ -21,7 +21,7 @@ This document is the locked reference for the project architecture. It is intent
 - **Four independent dimensions**: protocol version × lifecycle × transport × primitive/suite. Never write `if (stdio && oldVersion && tools)`.
 - **Interface + factory**: every swappable component is behind an interface; a factory builder instantiates the concrete implementation from detected version/transport. This is the mechanism that keeps the four dimensions orthogonal.
 - **Tests emit `TestResult` facts**; renderers consume them.
-- **Four failure layers**: Transport / JSON-RPC / MCP-protocol / Application-tool. A tool returning `isError:true` over a valid HTTP 200 is an *application* failure, not an MCP failure.
+- **Four failure layers**: Transport / JSON-RPC / MCP-protocol / Application-tool. A tool returning `isError:true` over a valid HTTP 200 is an _application_ failure, not an MCP failure.
 - **Tracing + redaction by default**: every byte in/out is traced; secrets are `REDACTED` unless `--show-secrets`.
 
 ---
@@ -121,15 +121,15 @@ graph TD
 
 Each phase is independently shippable and validates the architecture before expanding.
 
-**Phase 0 — Scaffold + verify TS.** *(Complete.)* Create project, `tsconfig`, eslint, `bin` entry, minimal TS module. **Confirm `lint` + `build` pass.** Then lay down `core/types` (`TestResult`, `TraceMessage`), JSON-RPC codec + multiplexer, tracing + redaction, timeout manager, reporting core. *Covers §8, §35, §36, §42–§44, §48, §49.*
+**Phase 0 — Scaffold + verify TS.** _(Complete.)_ Create project, `tsconfig`, eslint, `bin` entry, minimal TS module. **Confirm `lint` + `build` pass.** Then lay down `core/types` (`TestResult`, `TraceMessage`), JSON-RPC codec + multiplexer, tracing + redaction, timeout manager, reporting core. _Covers §8, §35, §36, §42–§44, §48, §49._
 
-**Phase 1 — Legacy + stdio (first real feature).** *(Complete.)* `ProtocolAdapter` interface + `LegacyProtocolAdapter` (initialize/initialized/shutdown) via factory; `Transport` interface + `StdioTransport` (spawn, stdout/stderr, NDJSON); capability matrix; tools list/call + schema validation + safe auto-invoke; conformance Levels 0–3. Delivers `testmymcp stdio "npx my-server"`. *§2, §4, §9–§13, §46 L0–3.*
+**Phase 1 — Legacy + stdio (first real feature).** _(Complete.)_ `ProtocolAdapter` interface + `LegacyProtocolAdapter` (initialize/initialized/shutdown) via factory; `Transport` interface + `StdioTransport` (spawn, stdout/stderr, NDJSON); capability matrix; tools list/call + schema validation + safe auto-invoke; conformance Levels 0–3. Delivers `testmymcp stdio "npx my-server"`. _§2, §4, §9–§13, §46 L0–3._
 
-**Phase 2 — HTTP transports.** *(Complete.)* Streamable HTTP + legacy SSE, `MCP-Session-Id` lifecycle, header-routing validation (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`), SSE/stream parsing, auth (none/Bearer/OAuth discovery). Delivers `testmymcp http <url>` (`--transport streamable-http|legacy-sse`). Verified: typecheck/lint/build/test green, 121 tests (21 new HTTP), CLI smoke-tested over both transports. *§3, §5–§7, §30.*
+**Phase 2 — HTTP transports.** _(Complete.)_ Streamable HTTP + legacy SSE, `MCP-Session-Id` lifecycle, header-routing validation (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`), SSE/stream parsing, auth (none/Bearer/OAuth discovery). Delivers `testmymcp http <url>` (`--transport streamable-http|legacy-sse`). Verified: typecheck/lint/build/test green, 121 tests (21 new HTTP), CLI smoke-tested over both transports. _§3, §5–§7, §30._
 
-**Phase 3 — Modern protocol.** *(Complete; see PHASE3-HANDOFF.md.)* `ModernProtocolAdapter` via the factory, stateless `server/discover`, per-request `_meta`, MRTR (`input_required` auto-retry with method-aware input responses), header routing (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`, Base64 `Mcp-Name`), stateless streamable-HTTP mode (no `Mcp-Session-Id`), `subscriptions/listen` client support, `x-mcp-header`→`Mcp-Param-*` mirroring, **Tasks extension** polling (`tasks/get`/`update`/`cancel` + `pollTask`), caching/TTL validation in the discovery suite, `-32021` capability-rejection coverage, and a modern stdio integration test. Modern CLI `--era modern` / `--protocol-version`. *§1, §2 modern, §6.3, §10, §17, §19, §23, §27–§29, §33.*
+**Phase 3 — Modern protocol.** _(Complete; see PHASE3-HANDOFF.md.)_ `ModernProtocolAdapter` via the factory, stateless `server/discover`, per-request `_meta`, MRTR (`input_required` auto-retry with method-aware input responses), header routing (`MCP-Protocol-Version`, `Mcp-Method`, `Mcp-Name`, Base64 `Mcp-Name`), stateless streamable-HTTP mode (no `Mcp-Session-Id`), `subscriptions/listen` client support, `x-mcp-header`→`Mcp-Param-*` mirroring, **Tasks extension** polling (`tasks/get`/`update`/`cancel` + `pollTask`), caching/TTL validation in the discovery suite, `-32021` capability-rejection coverage, and a modern stdio integration test. Modern CLI `--era modern` / `--protocol-version`. _§1, §2 modern, §6.3, §10, §17, §19, §23, §27–§29, §33._
 
-**Phase 4 — Behavioral & robustness.** *(Complete.)* New `behavioral`
+**Phase 4 — Behavioral & robustness.** _(Complete.)_ New `behavioral`
 (level 4) and `robustness` (level 5) suites: request-id-isolated concurrency, huge/unicode/binary
 payload round-trips, cancellation-notification handling, malformed-input rejection + recovery,
 concurrent mixed primitives, concurrency stress, a cursor-pagination follow utility, server
@@ -140,26 +140,28 @@ shared fixture helpers (`tests/fixtures/helpers`), dedicated single-purpose unha
 (`tests/fixtures/unhappy`), and a declarative scenario manifest + runner
 (`tests/e2e/manifest/scenarios.json`, `run-scenario.ts`, `scenarios.test.ts`) asserting per-test
 outcomes with required/optional flags and no-hang invariants. CI added (`.github/workflows/ci.yml`)
-running the verify chain. *§14–§16, §24, §26, §34, §37–§41.* Deferred: streaming/backpressure
+running the verify chain. _§14–§16, §24, §26, §34, §37–§41._ Deferred: streaming/backpressure
 measurement, progress results, roots client-request coverage, read/completion pagination.
 
-**Phase 5 — Security & fuzzing.** `testmymcp scan` (injection/agent-safety), HTTP security (TLS, SSRF, decompression bombs, huge responses), malformed-protocol fuzz tier (opt-in, Level 7). *§31, §32, §8 malformed, §46 L6–7.*
+**Phase 5 — Security & fuzzing.** `testmymcp scan` (injection/agent-safety), HTTP security (TLS, SSRF, decompression bombs, huge responses), malformed-protocol fuzz tier (opt-in, Level 7). _§31, §32, §8 malformed, §46 L6–7._
 
 **Phase 6 — Polish.** JUnit reporter, CI docs, extension-registry expansion, `inspect trace.json`.
 
 ### Completed: user-managed persistent sessions
-- **User-managed persistent sessions** — *done.* `session create/list/show/dispose` + `test <id>`
+
+- **User-managed persistent sessions** — _done._ `session create/list/show/dispose` + `test <id>`
   in `src/sessions/` (types, file store, shared runner) backed by a `.testmymcp/sessions.json`
   store with stable config-hash ids. One-shot `stdio`/`http` keep working (reuse is optional) and
   now share the same runner. Bearer tokens are never written (only the auth mode + a
   `requiresToken` flag); secret-looking env values are stored as a sentinel and re-supplied via
   `--env` on `test`.
-- **Env-aware stdio spawns** — *done.* Repeatable `--env KEY=VALUE` on `stdio`, `session create`,
+- **Env-aware stdio spawns** — _done._ Repeatable `--env KEY=VALUE` on `stdio`, `session create`,
   and `test <id>`, merged over the current environment for the child; sensitive key names are
   redacted at rest. This is how env-configured MCP servers (API keys, base URLs) are tested
   without wrapper scripts.
 
 ### Known edge case (backlog, normal priority)
+
 - **Servers that revoke access on disconnect** (OAuth/OTP/bank-grade MCPs). The tool is
   per-invocation and always closes the connection after a command, so it cannot satisfy servers
   that revoke on ANY close. Addressed only if/when worth the architectural cost (e.g. a local
@@ -194,16 +196,16 @@ measurement, progress results, roots client-request coverage, read/completion pa
 
 The blueprint maps to the 50 sections of `ACCOUNT_FOR.md`:
 
-| Blueprint area | ACCOUNT_FOR sections |
-| --- | --- |
-| Protocol/version detection | §1, §33, §35 |
-| Lifecycle models | §2, §19, §23, §41 |
-| Transports | §3, §4, §5, §6, §7, §30, §40 |
-| JSON-RPC | §8, §35, §49 |
-| Capabilities / primitives | §9–§13, §17–§21, §25, §26 |
-| Modern / extensions | §27, §28, §29 |
-| Behavioral / robustness | §14–§16, §24, §34, §36–§39 |
-| Security / fuzz | §31, §32 |
-| Tracing / redaction | §42, §43 |
-| Reporting / levels | §44, §45, §46, §48 |
-| Architecture | §47, §50 |
+| Blueprint area             | ACCOUNT_FOR sections         |
+| -------------------------- | ---------------------------- |
+| Protocol/version detection | §1, §33, §35                 |
+| Lifecycle models           | §2, §19, §23, §41            |
+| Transports                 | §3, §4, §5, §6, §7, §30, §40 |
+| JSON-RPC                   | §8, §35, §49                 |
+| Capabilities / primitives  | §9–§13, §17–§21, §25, §26    |
+| Modern / extensions        | §27, §28, §29                |
+| Behavioral / robustness    | §14–§16, §24, §34, §36–§39   |
+| Security / fuzz            | §31, §32                     |
+| Tracing / redaction        | §42, §43                     |
+| Reporting / levels         | §44, §45, §46, §48           |
+| Architecture               | §47, §50                     |

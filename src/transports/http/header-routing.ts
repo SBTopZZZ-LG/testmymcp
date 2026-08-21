@@ -73,7 +73,8 @@ export function validateJsonResponseHeaders(
   } = {},
 ): HeaderValidationResult {
   const issues: HeaderIssue[] = [];
-  const expectedVersion = opts.expectProtocolVersion ?? (opts.modern ? '2026-07-28' : LEGACY_LATEST_PROTOCOL_VERSION);
+  const expectedVersion =
+    opts.expectProtocolVersion ?? (opts.modern ? '2026-07-28' : LEGACY_LATEST_PROTOCOL_VERSION);
 
   if (view.protocolVersion === undefined || view.protocolVersion.length === 0) {
     issues.push({
@@ -83,7 +84,11 @@ export function validateJsonResponseHeaders(
       actual: view.protocolVersion,
       message: 'MCP-Protocol-Version header is missing',
     });
-  } else if (opts.modern ? !isProtocolVersion(view.protocolVersion) : !isLegacyProtocolVersion(view.protocolVersion)) {
+  } else if (
+    opts.modern
+      ? !isProtocolVersion(view.protocolVersion)
+      : !isLegacyProtocolVersion(view.protocolVersion)
+  ) {
     issues.push({
       severity: 'warn',
       header: 'MCP-Protocol-Version',
@@ -102,7 +107,8 @@ export function validateJsonResponseHeaders(
         header: 'Mcp-Method',
         expected: requestMethod,
         actual: view.method,
-        message: 'Mcp-Method header is missing; cannot confirm the response is routed for this request',
+        message:
+          'Mcp-Method header is missing; cannot confirm the response is routed for this request',
       });
     } else if (view.method !== requestMethod) {
       issues.push({

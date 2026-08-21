@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   createErrorResponse,
   createNotification,
@@ -50,7 +51,9 @@ describe('RequestMultiplexer', () => {
   it('rejects duplicate pending ids', async () => {
     const multiplexer = new RequestMultiplexer();
     multiplexer.register(createRequest(1, 'ping'));
-    await expect(multiplexer.register(createRequest(1, 'ping'))).rejects.toThrow(DuplicateRequestIdError);
+    await expect(multiplexer.register(createRequest(1, 'ping'))).rejects.toThrow(
+      DuplicateRequestIdError,
+    );
   });
 
   it('ignores responses with unknown ids', async () => {
@@ -116,7 +119,9 @@ describe('RequestMultiplexer', () => {
 
   it('passes notifications through without consuming them', () => {
     const multiplexer = new RequestMultiplexer();
-    expect(() => multiplexer.handleMessage(createNotification('notifications/initialized'))).not.toThrow();
+    expect(() =>
+      multiplexer.handleMessage(createNotification('notifications/initialized')),
+    ).not.toThrow();
     expect(multiplexer.pendingCount).toBe(0);
   });
 });

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+
 import {
+  SchemaLimitError,
   compileSchema,
   generateValidInput,
   isValidSchema,
-  SchemaLimitError,
   validateAgainstSchema,
 } from '../../src/core/schemas/validator.js';
 

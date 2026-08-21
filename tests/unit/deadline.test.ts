@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { delay, TimeoutError, withDeadline } from '../../src/core/timeouts/deadline.js';
+
+import { TimeoutError, delay, withDeadline } from '../../src/core/timeouts/deadline.js';
 
 describe('withDeadline', () => {
   it('resolves when the task completes in time', async () => {
@@ -40,7 +41,9 @@ describe('withDeadline', () => {
   });
 
   it('supports a custom message', async () => {
-    const promise = withDeadline({ kind: 'test', ms: 15, message: 'server refused to exit' }, () => delay(500));
+    const promise = withDeadline({ kind: 'test', ms: 15, message: 'server refused to exit' }, () =>
+      delay(500),
+    );
     await expect(promise).rejects.toThrow('server refused to exit');
   });
 });

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+
 import {
-  collectXMcpHeaders,
-  validateToolHeaders,
   buildMcpParamHeaders,
+  collectXMcpHeaders,
   sanitizeToolHeaders,
+  validateToolHeaders,
 } from '../../src/transports/http/x-mcp-header.js';
 
 describe('collectXMcpHeaders', () => {
@@ -80,8 +81,14 @@ describe('validateToolHeaders', () => {
   });
 
   it('rejects invalid field-name tokens and control chars', () => {
-    const badToken = { type: 'object', properties: { a: { type: 'string', 'x-mcp-header': 'Bad Header' } } };
-    const badCrlf = { type: 'object', properties: { a: { type: 'string', 'x-mcp-header': 'X\r\nInjected' } } };
+    const badToken = {
+      type: 'object',
+      properties: { a: { type: 'string', 'x-mcp-header': 'Bad Header' } },
+    };
+    const badCrlf = {
+      type: 'object',
+      properties: { a: { type: 'string', 'x-mcp-header': 'X\r\nInjected' } },
+    };
     expect(validateToolHeaders(badToken).valid).toBe(false);
     expect(validateToolHeaders(badCrlf).valid).toBe(false);
   });
@@ -94,7 +101,10 @@ describe('buildMcpParamHeaders', () => {
       region: { type: 'string', 'x-mcp-header': 'Region' },
       count: { type: 'integer', 'x-mcp-header': 'Count' },
       ok: { type: 'boolean', 'x-mcp-header': 'OK' },
-      secret: { type: 'object', properties: { token: { type: 'string', 'x-mcp-header': 'X-Token' } } },
+      secret: {
+        type: 'object',
+        properties: { token: { type: 'string', 'x-mcp-header': 'X-Token' } },
+      },
     },
   };
 
@@ -126,7 +136,10 @@ describe('buildMcpParamHeaders', () => {
   it('returns empty when the schema is invalid', () => {
     const bad = {
       type: 'object',
-      properties: { a: { type: 'string', 'x-mcp-header': 'Dup' }, b: { type: 'string', 'x-mcp-header': 'dup' } },
+      properties: {
+        a: { type: 'string', 'x-mcp-header': 'Dup' },
+        b: { type: 'string', 'x-mcp-header': 'dup' },
+      },
     };
     expect(buildMcpParamHeaders(bad, { a: 'x', b: 'y' })).toEqual({});
   });
@@ -134,12 +147,18 @@ describe('buildMcpParamHeaders', () => {
 
 describe('sanitizeToolHeaders', () => {
   it('keeps a conforming tool', () => {
-    const tool = { name: 't', inputSchema: { type: 'object', properties: { a: { type: 'string', 'x-mcp-header': 'A' } } } };
+    const tool = {
+      name: 't',
+      inputSchema: { type: 'object', properties: { a: { type: 'string', 'x-mcp-header': 'A' } } },
+    };
     expect(sanitizeToolHeaders(tool)).toMatchObject({ valid: true, tool });
   });
 
   it('rejects a non-conforming tool and reports a reason', () => {
-    const tool = { name: 't', inputSchema: { type: 'object', properties: { a: { type: 'string', 'x-mcp-header': '' } } } };
+    const tool = {
+      name: 't',
+      inputSchema: { type: 'object', properties: { a: { type: 'string', 'x-mcp-header': '' } } },
+    };
     const result = sanitizeToolHeaders(tool);
     expect(result.valid).toBe(false);
     expect(result.reason).toBeTruthy();

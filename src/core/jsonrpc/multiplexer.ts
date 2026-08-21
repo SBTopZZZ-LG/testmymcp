@@ -1,6 +1,6 @@
+import { TimeoutError, type TimeoutKind } from '../timeouts/deadline.js';
 import type { JsonRpcId, JsonRpcRequest, JsonRpcResponse } from './messages.js';
 import { isResponse, responseKey } from './messages.js';
-import { TimeoutError, type TimeoutKind } from '../timeouts/deadline.js';
 
 export class DuplicateRequestIdError extends Error {
   readonly id: JsonRpcId;
@@ -59,7 +59,11 @@ export class RequestMultiplexer {
     return this.pending.has(responseKey(id));
   }
 
-  register(request: JsonRpcRequest, timeoutMs?: number, timeoutKind: TimeoutKind = 'request'): Promise<JsonRpcResponse> {
+  register(
+    request: JsonRpcRequest,
+    timeoutMs?: number,
+    timeoutKind: TimeoutKind = 'request',
+  ): Promise<JsonRpcResponse> {
     const key = responseKey(request.id);
     if (this.pending.has(key)) return Promise.reject(new DuplicateRequestIdError(request.id));
     const deadline = timeoutMs ?? this.defaultTimeoutMs;
@@ -70,7 +74,11 @@ export class RequestMultiplexer {
         timer = setTimeout(() => {
           this.pending.delete(key);
           reject(
-            new TimeoutError(timeoutKind, deadline, `${request.method} timed out after ${deadline}ms`),
+            new TimeoutError(
+              timeoutKind,
+              deadline,
+              `${request.method} timed out after ${deadline}ms`,
+            ),
           );
         }, deadline);
         if (typeof timer.unref === 'function') timer.unref();
@@ -101,7 +109,9 @@ export class RequestMultiplexer {
     this.pending.delete(key);
     if (entry.timer !== undefined) clearTimeout(entry.timer);
     if (message.error !== undefined) {
-      entry.reject(new JsonRpcRemoteError(message.error.code, message.error.message, message.error.data));
+      entry.reject(
+        new JsonRpcRemoteError(message.error.code, message.error.message, message.error.data),
+      );
     } else {
       entry.resolve(message);
     }

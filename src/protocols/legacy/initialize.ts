@@ -1,11 +1,11 @@
+import type { ServerInfo } from '../../core/protocol/adapter.js';
 import {
-  parseServerCapabilities,
-  toClientCapabilitiesJson,
   type ClientCapabilities,
   type ServerCapabilities,
+  parseServerCapabilities,
+  toClientCapabilitiesJson,
 } from '../../core/protocol/capabilities.js';
-import type { ServerInfo } from '../../core/protocol/adapter.js';
-import { isProtocolVersion, type ProtocolVersion } from '../../core/types/protocol.js';
+import { type ProtocolVersion, isProtocolVersion } from '../../core/types/protocol.js';
 
 export interface InitializeResult {
   protocolVersion: ProtocolVersion;
@@ -20,7 +20,9 @@ export interface BuildInitializeParamsOptions {
   clientCapabilities: ClientCapabilities;
 }
 
-export function buildInitializeParams(options: BuildInitializeParamsOptions): Record<string, unknown> {
+export function buildInitializeParams(
+  options: BuildInitializeParamsOptions,
+): Record<string, unknown> {
   return {
     protocolVersion: options.protocolVersion,
     capabilities: toClientCapabilitiesJson(options.clientCapabilities),

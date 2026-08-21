@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { describeAuth, discoverProtectedEndpoint } from '../../src/transports/http/auth.js';
 
 describe('HTTP auth', () => {
@@ -10,7 +11,10 @@ describe('HTTP auth', () => {
   });
 
   it('skips discovery when a bearer token is already configured', async () => {
-    const result = await discoverProtectedEndpoint('http://127.0.0.1:1/', { mode: 'bearer', token: 'x' });
+    const result = await discoverProtectedEndpoint('http://127.0.0.1:1/', {
+      mode: 'bearer',
+      token: 'x',
+    });
     expect(result.kind).toBe('no-oauth-metadata');
   });
 

@@ -1,20 +1,27 @@
-import { describe, expect, it } from 'vitest';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+
 import { buildSession } from '../../src/sessions/index.js';
 import type { SessionTarget } from '../../src/sessions/index.js';
 
 const envFixture = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/env-server.js');
 
-async function toolResultText(target: SessionTarget, args: Record<string, unknown> = {}): Promise<unknown> {
+async function toolResultText(
+  target: SessionTarget,
+  args: Record<string, unknown> = {},
+): Promise<unknown> {
   const { adapter } = buildSession(target, { timeoutMs: 15_000, showSecrets: true });
   try {
     await adapter.connect();
     await adapter.initialize();
-    const call = await adapter.request<{ content: Array<{ type: string; text?: string }> }>('tools/call', {
-      name: 'read_env',
-      arguments: args,
-    });
+    const call = await adapter.request<{ content: Array<{ type: string; text?: string }> }>(
+      'tools/call',
+      {
+        name: 'read_env',
+        arguments: args,
+      },
+    );
     return call.content?.[0]?.text;
   } finally {
     try {

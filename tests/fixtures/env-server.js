@@ -35,7 +35,9 @@ function handle(message) {
       return resultFor(message, { tools });
     case 'tools/call':
       if (message.params?.name === 'read_env') {
-        return resultFor(message, { content: [{ type: 'text', text: String(process.env[envName] ?? '') }] });
+        return resultFor(message, {
+          content: [{ type: 'text', text: String(process.env[envName] ?? '') }],
+        });
       }
       return errorFor(message, -32602, `unknown tool: ${String(message.params?.name ?? '?')}`);
     default:

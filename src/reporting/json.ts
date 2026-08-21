@@ -1,6 +1,6 @@
 import type { TestResult } from '../core/types/test-result.js';
+import { type TestSummary, computeSummary } from './summary.js';
 import type { ReportMeta, Reporter } from './types.js';
-import { computeSummary, type TestSummary } from './summary.js';
 
 export interface JsonReport {
   tool: 'testmymcp';

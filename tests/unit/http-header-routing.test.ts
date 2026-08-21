@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import {
   buildRequestHeaders,
   isLegacyProtocolVersion,
@@ -32,7 +33,9 @@ describe('HTTP header routing validation', () => {
     const view = readJsonResponseHeaders(headers({ 'mcp-method': 'initialize-WRONG' }), normalize);
     const result = validateJsonResponseHeaders(view, 'initialize');
     expect(result.valid).toBe(false);
-    expect(result.issues.some((i) => i.header === 'Mcp-Method' && i.severity === 'error')).toBe(true);
+    expect(result.issues.some((i) => i.header === 'Mcp-Method' && i.severity === 'error')).toBe(
+      true,
+    );
     expect(result.issues.find((i) => i.header === 'Mcp-Method')?.actual).toBe('initialize-WRONG');
   });
 
@@ -40,20 +43,29 @@ describe('HTTP header routing validation', () => {
     const view = readJsonResponseHeaders(headers({ 'mcp-method': undefined }), normalize);
     const result = validateJsonResponseHeaders(view, 'tools/list');
     expect(result.valid).toBe(false);
-    expect(result.issues.some((i) => i.header === 'Mcp-Method' && i.severity === 'error')).toBe(true);
+    expect(result.issues.some((i) => i.header === 'Mcp-Method' && i.severity === 'error')).toBe(
+      true,
+    );
   });
 
   it('warns on a missing MCP-Protocol-Version', () => {
     const view = readJsonResponseHeaders(headers({ 'mcp-protocol-version': undefined }), normalize);
     const result = validateJsonResponseHeaders(view, 'initialize');
     expect(result.valid).toBe(false);
-    expect(result.issues.some((i) => i.header === 'MCP-Protocol-Version' && i.severity === 'warn')).toBe(true);
+    expect(
+      result.issues.some((i) => i.header === 'MCP-Protocol-Version' && i.severity === 'warn'),
+    ).toBe(true);
   });
 
   it('warns on an unknown (non-legacy) protocol version', () => {
-    const view = readJsonResponseHeaders(headers({ 'mcp-protocol-version': '2099-01-01' }), normalize);
+    const view = readJsonResponseHeaders(
+      headers({ 'mcp-protocol-version': '2099-01-01' }),
+      normalize,
+    );
     const result = validateJsonResponseHeaders(view, 'initialize');
-    expect(result.issues.some((i) => i.header === 'MCP-Protocol-Version' && i.severity === 'warn')).toBe(true);
+    expect(
+      result.issues.some((i) => i.header === 'MCP-Protocol-Version' && i.severity === 'warn'),
+    ).toBe(true);
   });
 
   it('does not demand Mcp-Method when no method is supplied (e.g. notifications)', () => {
@@ -70,16 +82,24 @@ describe('HTTP header routing validation', () => {
   });
 
   it('accepts the modern protocol version when modern is set', () => {
-    const view = readJsonResponseHeaders(headers({ 'mcp-protocol-version': '2026-07-28' }), normalize);
+    const view = readJsonResponseHeaders(
+      headers({ 'mcp-protocol-version': '2026-07-28' }),
+      normalize,
+    );
     const result = validateJsonResponseHeaders(view, 'tools/list', { modern: true });
     const versionIssue = result.issues.find((i) => i.header === 'MCP-Protocol-Version');
     expect(versionIssue).toBeUndefined();
   });
 
   it('rejects the modern version when modern is not set (legacy validation)', () => {
-    const view = readJsonResponseHeaders(headers({ 'mcp-protocol-version': '2026-07-28' }), normalize);
+    const view = readJsonResponseHeaders(
+      headers({ 'mcp-protocol-version': '2026-07-28' }),
+      normalize,
+    );
     const result = validateJsonResponseHeaders(view, 'tools/list');
-    expect(result.issues.some((i) => i.header === 'MCP-Protocol-Version' && i.severity === 'warn')).toBe(true);
+    expect(
+      result.issues.some((i) => i.header === 'MCP-Protocol-Version' && i.severity === 'warn'),
+    ).toBe(true);
   });
 });
 

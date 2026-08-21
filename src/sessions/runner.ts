@@ -1,15 +1,15 @@
+import type { NegotiatedSession, ProtocolAdapter } from '../core/protocol/adapter.js';
+import { protocolAdapterFactory } from '../core/protocol/factory.js';
+import type { ToolExecutionMode } from '../core/tools/safety.js';
+import { TraceStore } from '../core/tracing/store.js';
+import type { ProtocolEra, ProtocolVersion } from '../core/types/protocol.js';
+import { TestLevel, type TestResult } from '../core/types/test-result.js';
 import { TestEngine } from '../engine/engine.js';
 import { defaultRunOptions } from '../engine/options.js';
-import { TestLevel, type TestResult } from '../core/types/test-result.js';
-import type { ProtocolEra, ProtocolVersion } from '../core/types/protocol.js';
-import { protocolAdapterFactory } from '../core/protocol/factory.js';
-import type { NegotiatedSession, ProtocolAdapter } from '../core/protocol/adapter.js';
-import type { Transport } from '../transports/transport.js';
-import { TraceStore } from '../core/tracing/store.js';
-import { StdioTransport } from '../transports/stdio/index.js';
-import { LegacySseTransport, StreamableHttpTransport } from '../transports/http/index.js';
 import type { ReportMeta } from '../reporting/index.js';
-import type { ToolExecutionMode } from '../core/tools/safety.js';
+import { LegacySseTransport, StreamableHttpTransport } from '../transports/http/index.js';
+import { StdioTransport } from '../transports/stdio/index.js';
+import type { Transport } from '../transports/transport.js';
 import type { SessionTarget } from './types.js';
 
 const DEFAULT_MAX_LINE_BYTES = 1024 * 1024;
@@ -97,7 +97,10 @@ export function buildSession(target: SessionTarget, options: BuildSessionOptions
   return { transport, adapter, trace, era };
 }
 
-export async function runTarget(target: SessionTarget, preferences: RunTargetPreferences): Promise<TargetRunOutcome> {
+export async function runTarget(
+  target: SessionTarget,
+  preferences: RunTargetPreferences,
+): Promise<TargetRunOutcome> {
   const runOptions = defaultRunOptions({
     mode: preferences.mode,
     maxLevel: preferences.level as TestLevel,
@@ -127,7 +130,12 @@ export async function runTarget(target: SessionTarget, preferences: RunTargetPre
   const session = engine.shared.session;
   const meta: ReportMeta = {
     protocol: session?.protocolVersion ?? defaultVersion(target, era),
-    protocolEra: session !== undefined ? (session.protocolVersion === '2026-07-28' ? 'modern' : 'legacy') : era,
+    protocolEra:
+      session !== undefined
+        ? session.protocolVersion === '2026-07-28'
+          ? 'modern'
+          : 'legacy'
+        : era,
     transport: target.transport === 'http' ? target.httpTransport : 'stdio',
     startedAt,
     durationMs: Date.now() - startedAt,
@@ -139,7 +147,10 @@ export async function runTarget(target: SessionTarget, preferences: RunTargetPre
   return { results, meta };
 }
 
-export async function probeTarget(target: SessionTarget, options: BuildSessionOptions): Promise<NegotiatedSession> {
+export async function probeTarget(
+  target: SessionTarget,
+  options: BuildSessionOptions,
+): Promise<NegotiatedSession> {
   const { adapter } = buildSession(target, options);
   try {
     await adapter.connect();

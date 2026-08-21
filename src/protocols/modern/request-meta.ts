@@ -1,6 +1,6 @@
+import type { ServerInfo } from '../../core/protocol/adapter.js';
 import type { ClientCapabilities } from '../../core/protocol/capabilities.js';
 import { toClientCapabilitiesJson } from '../../core/protocol/capabilities.js';
-import type { ServerInfo } from '../../core/protocol/adapter.js';
 import type { ProtocolVersion } from '../../core/types/protocol.js';
 
 export interface ModernRequestMeta {

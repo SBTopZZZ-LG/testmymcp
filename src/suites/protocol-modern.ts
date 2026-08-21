@@ -1,7 +1,7 @@
-import { TestLevel, type TestResult } from '../core/types/test-result.js';
 import { eraOfVersion, isProtocolVersion } from '../core/types/protocol.js';
-import { pass, warn, fromError } from '../engine/result.js';
+import { TestLevel, type TestResult } from '../core/types/test-result.js';
 import type { SuiteContext } from '../engine/ctx.js';
+import { fromError, pass, warn } from '../engine/result.js';
 
 /**
  * Modern (2026-07-28) protocol suite. There is no `initialize` handshake: the
@@ -19,14 +19,21 @@ export async function runModernProtocolSuite(ctx: SuiteContext): Promise<TestRes
 
   if (ctx.observed.exit !== null) {
     results.push(
-      fromError('protocol process-alive', 'protocol', TestLevel.Protocol, new Error(`server exited during testing`), 'transport', {
-        transport,
-        durationMs: 0,
-        evidence: {
-          code: ctx.observed.exit.code,
-          signal: ctx.observed.exit.signal ?? 'none',
+      fromError(
+        'protocol process-alive',
+        'protocol',
+        TestLevel.Protocol,
+        new Error(`server exited during testing`),
+        'transport',
+        {
+          transport,
+          durationMs: 0,
+          evidence: {
+            code: ctx.observed.exit.code,
+            signal: ctx.observed.exit.signal ?? 'none',
+          },
         },
-      }),
+      ),
     );
     return results;
   }
@@ -43,10 +50,16 @@ export async function runModernProtocolSuite(ctx: SuiteContext): Promise<TestRes
       }),
     );
     results.push(
-      warn('protocol remaining-skipped', 'protocol', TestLevel.Protocol, 'skipped because server/discover failed', {
-        transport,
-        durationMs: 0,
-      }),
+      warn(
+        'protocol remaining-skipped',
+        'protocol',
+        TestLevel.Protocol,
+        'skipped because server/discover failed',
+        {
+          transport,
+          durationMs: 0,
+        },
+      ),
     );
     return results;
   }
@@ -62,13 +75,22 @@ export async function runModernProtocolSuite(ctx: SuiteContext): Promise<TestRes
     }),
   );
 
-  if (!isProtocolVersion(session.protocolVersion) || eraOfVersion(session.protocolVersion) === null) {
+  if (
+    !isProtocolVersion(session.protocolVersion) ||
+    eraOfVersion(session.protocolVersion) === null
+  ) {
     results.push(
-      warn('protocol version-known', 'protocol', TestLevel.Protocol, `server advertised unknown protocol version "${session.protocolVersion}"`, {
-        protocol: session.protocolVersion,
-        transport,
-        durationMs: 0,
-      }),
+      warn(
+        'protocol version-known',
+        'protocol',
+        TestLevel.Protocol,
+        `server advertised unknown protocol version "${session.protocolVersion}"`,
+        {
+          protocol: session.protocolVersion,
+          transport,
+          durationMs: 0,
+        },
+      ),
     );
   } else {
     results.push(
@@ -91,11 +113,17 @@ export async function runModernProtocolSuite(ctx: SuiteContext): Promise<TestRes
     );
   } else {
     results.push(
-      warn('protocol capabilities', 'protocol', TestLevel.Protocol, 'server did not advertise any capabilities', {
-        protocol: session.protocolVersion,
-        transport,
-        durationMs: 0,
-      }),
+      warn(
+        'protocol capabilities',
+        'protocol',
+        TestLevel.Protocol,
+        'server did not advertise any capabilities',
+        {
+          protocol: session.protocolVersion,
+          transport,
+          durationMs: 0,
+        },
+      ),
     );
   }
 
@@ -105,14 +133,23 @@ export async function runModernProtocolSuite(ctx: SuiteContext): Promise<TestRes
 
   if (ctx.observed.garbageLines.length > 0) {
     results.push(
-      fromError('protocol stdout-framing', 'protocol', TestLevel.Protocol, new Error(`output on stdout is not valid JSON-RPC`), 'transport', {
-        transport,
-        durationMs: 0,
-        evidence: ctx.observed.garbageLines.slice(0, 5),
-      }),
+      fromError(
+        'protocol stdout-framing',
+        'protocol',
+        TestLevel.Protocol,
+        new Error(`output on stdout is not valid JSON-RPC`),
+        'transport',
+        {
+          transport,
+          durationMs: 0,
+          evidence: ctx.observed.garbageLines.slice(0, 5),
+        },
+      ),
     );
   } else {
-    results.push(pass('protocol stdout-framing', 'protocol', TestLevel.Protocol, { transport, durationMs: 0 }));
+    results.push(
+      pass('protocol stdout-framing', 'protocol', TestLevel.Protocol, { transport, durationMs: 0 }),
+    );
   }
 
   return results;

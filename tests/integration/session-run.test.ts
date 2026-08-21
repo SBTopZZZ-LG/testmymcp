@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import { spawn } from 'node:child_process';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 import { SessionStore, deriveSessionId, probeTarget, runTarget } from '../../src/sessions/index.js';
 import type { SessionTarget } from '../../src/sessions/index.js';
@@ -32,7 +32,10 @@ async function startHttpFixture(): Promise<Fixture> {
   });
   await new Promise<void>((resolvePort, reject) => {
     let stderr = '';
-    const timer = setTimeout(() => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)), 10_000);
+    const timer = setTimeout(
+      () => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)),
+      10_000,
+    );
     child.stderr?.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');
       const match = /listening on (http:\/\/127\.0\.0\.1:\d+)/.exec(stderr);
@@ -57,8 +60,9 @@ async function startHttpFixture(): Promise<Fixture> {
         if (child.exitCode !== null) return resolveKill();
         child.once('exit', () => resolveKill());
         if (process.platform === 'win32') {
-          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once('exit', () =>
-            setTimeout(resolveKill, 100),
+          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once(
+            'exit',
+            () => setTimeout(resolveKill, 100),
           );
         } else {
           child.kill('SIGTERM');
@@ -152,7 +156,14 @@ describe('session reuse via store + runTarget', () => {
       expect(requiresSecretEnv).toBe(false);
 
       const store = new SessionStore(file);
-      await store.create({ id, createdAt: 0, lastUsedAt: 0, target: stored, requiresToken, requiresSecretEnv });
+      await store.create({
+        id,
+        createdAt: 0,
+        lastUsedAt: 0,
+        target: stored,
+        requiresToken,
+        requiresSecretEnv,
+      });
 
       const raw = await readFile(file, 'utf8');
       expect(raw).not.toContain(token);

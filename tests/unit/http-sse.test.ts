@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { SseParser } from '../../src/transports/http/sse.js';
 
 function parseAll(input: string): ReturnType<SseParser['push']> {
@@ -61,7 +62,9 @@ describe('SSE parser', () => {
 
   it('errors when a single frame exceeds maxEventBytes', () => {
     const parser = new SseParser({ maxEventBytes: 10 });
-    const events = parser.push('event: message\ndata: this is a very long data payload exceeding the cap\n\n');
+    const events = parser.push(
+      'event: message\ndata: this is a very long data payload exceeding the cap\n\n',
+    );
     expect(events.some((e) => e.kind === 'error')).toBe(true);
   });
 });

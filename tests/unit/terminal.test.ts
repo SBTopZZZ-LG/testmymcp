@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { renderTerminal } from '../../src/reporting/terminal.js';
+
 import { TestLevel, type TestResult } from '../../src/core/types/test-result.js';
+import { renderTerminal } from '../../src/reporting/terminal.js';
 
 function result(partial: Partial<TestResult>): TestResult {
   return {

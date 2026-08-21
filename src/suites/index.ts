@@ -1,11 +1,11 @@
 import type { TestLevel } from '../core/types/test-result.js';
 import type { SuiteContext } from '../engine/ctx.js';
-import { runConnectivitySuite } from './connectivity.js';
-import { runProtocolSuite } from './protocol.js';
-import { runModernProtocolSuite } from './protocol-modern.js';
-import { runDiscoverySuite } from './discovery.js';
-import { runCapabilitySuite } from './capability.js';
 import { runBehavioralSuite } from './behavioral.js';
+import { runCapabilitySuite } from './capability.js';
+import { runConnectivitySuite } from './connectivity.js';
+import { runDiscoverySuite } from './discovery.js';
+import { runModernProtocolSuite } from './protocol-modern.js';
+import { runProtocolSuite } from './protocol.js';
 import { runRobustnessSuite } from './robustness.js';
 
 export interface TestSuite {
@@ -16,7 +16,11 @@ export interface TestSuite {
 
 export const SUITES: readonly TestSuite[] = [
   { name: 'connectivity', level: 0 as TestLevel, run: runConnectivitySuite },
-  { name: 'protocol', level: 1 as TestLevel, run: (ctx) => (ctx.era === 'modern' ? runModernProtocolSuite(ctx) : runProtocolSuite(ctx)) },
+  {
+    name: 'protocol',
+    level: 1 as TestLevel,
+    run: (ctx) => (ctx.era === 'modern' ? runModernProtocolSuite(ctx) : runProtocolSuite(ctx)),
+  },
   { name: 'discovery', level: 2 as TestLevel, run: runDiscoverySuite },
   { name: 'capability', level: 3 as TestLevel, run: runCapabilitySuite },
   { name: 'behavioral', level: 4 as TestLevel, run: runBehavioralSuite },

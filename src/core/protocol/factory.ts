@@ -1,8 +1,8 @@
 import { createLegacyProtocolAdapter } from '../../protocols/legacy/adapter.js';
 import { createModernProtocolAdapter } from '../../protocols/modern/adapter.js';
 import type { Transport } from '../../transports/transport.js';
-import type { TraceStore } from '../tracing/store.js';
 import type { IdStyle } from '../jsonrpc/id.js';
+import type { TraceStore } from '../tracing/store.js';
 import type { ProtocolEra, ProtocolVersion } from '../types/protocol.js';
 import { eraOfVersion } from '../types/protocol.js';
 import type { ProtocolAdapter, ServerInfo } from './adapter.js';
@@ -36,16 +36,22 @@ export class UnsupportedProtocolVersionError extends Error {
 }
 
 export interface ProtocolAdapterFactory {
-  create(eraOrVersion: ProtocolEra | ProtocolVersion, options: AdapterFactoryOptions): ProtocolAdapter;
+  create(
+    eraOrVersion: ProtocolEra | ProtocolVersion,
+    options: AdapterFactoryOptions,
+  ): ProtocolAdapter;
 }
 
 export class DefaultProtocolAdapterFactory implements ProtocolAdapterFactory {
-  create(eraOrVersion: ProtocolEra | ProtocolVersion, options: AdapterFactoryOptions): ProtocolAdapter {
+  create(
+    eraOrVersion: ProtocolEra | ProtocolVersion,
+    options: AdapterFactoryOptions,
+  ): ProtocolAdapter {
     const directEra = eraOfVersion(eraOrVersion);
     const era: ProtocolEra =
       eraOrVersion === 'legacy' || eraOrVersion === 'modern'
         ? eraOrVersion
-        : directEra ?? 'legacy';
+        : (directEra ?? 'legacy');
     if (era === 'modern') {
       return createModernProtocolAdapter({
         transport: options.transport,

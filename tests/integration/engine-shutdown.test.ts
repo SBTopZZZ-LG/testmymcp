@@ -1,13 +1,16 @@
-import { describe, expect, it } from 'vitest';
 import { spawn } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
 import { protocolAdapterFactory } from '../../src/core/protocol/factory.js';
 import { StreamableHttpTransport } from '../../src/transports/http/index.js';
 import { StdioTransport } from '../../src/transports/stdio/index.js';
 
-const modernFixture = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/modern-server.js');
+const modernFixture = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../fixtures/modern-server.js',
+);
 const stdioFixture = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/fake-server.js');
 
 function randomPort(): number {
@@ -16,8 +19,15 @@ function randomPort(): number {
 
 describe('Phase 4: graceful shutdown', () => {
   it('StdioTransport gracefully terminates a cooperative server with a clean exit (code 0)', async () => {
-    const transport = new StdioTransport({ command: `node "${stdioFixture}"`.trim(), shutdownTimeoutMs: 5000 });
-    const adapter = protocolAdapterFactory.create('legacy', { transport, requestTimeoutMs: 10_000, initTimeoutMs: 5000 });
+    const transport = new StdioTransport({
+      command: `node "${stdioFixture}"`.trim(),
+      shutdownTimeoutMs: 5000,
+    });
+    const adapter = protocolAdapterFactory.create('legacy', {
+      transport,
+      requestTimeoutMs: 10_000,
+      initTimeoutMs: 5000,
+    });
     transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
     await adapter.connect();
     await adapter.initialize();
@@ -32,7 +42,9 @@ describe('Phase 4: graceful shutdown', () => {
 
   it('the client disconnect resolves cleanly after the server is killed mid-session', async () => {
     const port = randomPort();
-    const child = spawn(process.execPath, [modernFixture, '--port', String(port)], { stdio: ['ignore', 'ignore', 'pipe'] });
+    const child = spawn(process.execPath, [modernFixture, '--port', String(port)], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
     await new Promise<void>((resolvePort, reject) => {
       let stderr = '';
       const timer = setTimeout(() => reject(new Error('startup timeout')), 10_000);
@@ -46,8 +58,17 @@ describe('Phase 4: graceful shutdown', () => {
     });
     try {
       const url = `http://127.0.0.1:${port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 8000 });
-      const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000, shutdownTimeoutMs: 3000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 8000,
+      });
+      const adapter = protocolAdapterFactory.create('modern', {
+        transport,
+        initTimeoutMs: 5000,
+        shutdownTimeoutMs: 3000,
+      });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
       await adapter.initialize();
@@ -69,14 +90,25 @@ describe('Phase 4: graceful shutdown', () => {
 
 describe('Phase 4: client feature — server logging notifications are captured', () => {
   it('observes a logging/message notification emitted during a tool call', async () => {
-    const transport = new StdioTransport({ command: `node "${stdioFixture}" --log-on-call`.trim(), shutdownTimeoutMs: 5000 });
-    const adapter = protocolAdapterFactory.create('legacy', { transport, requestTimeoutMs: 10_000, initTimeoutMs: 5000 });
+    const transport = new StdioTransport({
+      command: `node "${stdioFixture}" --log-on-call`.trim(),
+      shutdownTimeoutMs: 5000,
+    });
+    const adapter = protocolAdapterFactory.create('legacy', {
+      transport,
+      requestTimeoutMs: 10_000,
+      initTimeoutMs: 5000,
+    });
 
     const logs: Array<Record<string, unknown>> = [];
     transport.observer = {
       onMessage: (message) => {
         adapter.mux.handleMessage(message);
-        if (typeof message === 'object' && message !== null && (message as Record<string, unknown>)['method'] === 'notifications/logging/message') {
+        if (
+          typeof message === 'object' &&
+          message !== null &&
+          (message as Record<string, unknown>)['method'] === 'notifications/logging/message'
+        ) {
           logs.push(message as Record<string, unknown>);
         }
       },
@@ -84,7 +116,11 @@ describe('Phase 4: client feature — server logging notifications are captured'
 
     await adapter.connect();
     await adapter.initialize();
-    const result = (await adapter.request('tools/call', { name: 'sum', arguments: { a: 1, b: 2 } }, 8000)) as Record<string, unknown>;
+    const result = (await adapter.request(
+      'tools/call',
+      { name: 'sum', arguments: { a: 1, b: 2 } },
+      8000,
+    )) as Record<string, unknown>;
     expect(result.content).toBeDefined();
 
     expect(logs.length).toBeGreaterThan(0);

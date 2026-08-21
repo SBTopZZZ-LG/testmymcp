@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { TraceStore } from '../../src/core/tracing/store.js';
+
 import { REDACTED } from '../../src/core/tracing/redaction.js';
+import { TraceStore } from '../../src/core/tracing/store.js';
 
 describe('TraceStore', () => {
   it('redacts sensitive payloads by default', () => {
@@ -49,7 +50,13 @@ describe('TraceStore', () => {
     const store = new TraceStore({ redact: false });
     store.add({ direction: 'out', kind: 'request', method: 'ping', requestId: 3, timestamp: 0 });
     store.add({ direction: 'in', kind: 'response', method: 'ping', requestId: 3, timestamp: 1 });
-    store.add({ direction: 'out', kind: 'request', method: 'tools/list', requestId: 4, timestamp: 2 });
+    store.add({
+      direction: 'out',
+      kind: 'request',
+      method: 'tools/list',
+      requestId: 4,
+      timestamp: 2,
+    });
 
     expect(store.byRequestId(3)).toHaveLength(2);
     expect(store.byRequestId(4)).toHaveLength(1);

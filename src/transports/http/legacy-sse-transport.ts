@@ -1,10 +1,11 @@
 import type { Readable } from 'node:stream';
+
 import { isNotification, isRequest, isResponse } from '../../core/jsonrpc/messages.js';
 import type { Transport, TransportObserver } from '../transport.js';
+import { postJson } from './client.js';
+import { type SseFieldEvent, SseParser } from './sse.js';
 import type { AuthConfig } from './types.js';
 import { HTTP_CONTENT_TYPES } from './types.js';
-import { postJson } from './client.js';
-import { SseParser, type SseFieldEvent } from './sse.js';
 
 export interface LegacySseTransportOptions {
   /** The SSE stream endpoint, e.g. `http://127.0.0.1:8937/sse`. */
@@ -106,7 +107,9 @@ export class LegacySseTransport implements Transport {
     // The JSON-RPC reply is delivered over the long-lived SSE stream, not in
     // this POST response. Surface only hard transport failures here.
     if (result.statusCode >= 500) {
-      throw new Error(`messages endpoint returned HTTP ${result.statusCode} (${result.statusText})`);
+      throw new Error(
+        `messages endpoint returned HTTP ${result.statusCode} (${result.statusText})`,
+      );
     }
   }
 
@@ -202,7 +205,9 @@ export class LegacySseTransport implements Transport {
 function extractSessionId(endpointData: string): string | undefined {
   if (!endpointData.includes('sessionId')) return undefined;
   try {
-    const query = endpointData.includes('?') ? endpointData.slice(endpointData.indexOf('?') + 1) : '';
+    const query = endpointData.includes('?')
+      ? endpointData.slice(endpointData.indexOf('?') + 1)
+      : '';
     const params = new URLSearchParams(query);
     const value = params.get('sessionId');
     return value === null ? undefined : value;

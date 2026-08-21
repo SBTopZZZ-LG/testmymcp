@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { createLegacyProtocolAdapter, type LegacyAdapterOptions } from '../../src/protocols/legacy/adapter.js';
-import { createErrorResponse, createResponse, type JsonRpcId } from '../../src/core/jsonrpc/messages.js';
+
+import {
+  type JsonRpcId,
+  createErrorResponse,
+  createResponse,
+} from '../../src/core/jsonrpc/messages.js';
+import {
+  type LegacyAdapterOptions,
+  createLegacyProtocolAdapter,
+} from '../../src/protocols/legacy/adapter.js';
 import type { ExitInfo, Transport, TransportObserver } from '../../src/transports/transport.js';
 
 class FakeTransport implements Transport {
@@ -46,7 +54,13 @@ function initializeResult() {
 }
 
 function makeAdapter(transport: FakeTransport, extra: Partial<LegacyAdapterOptions> = {}) {
-  const adapter = createLegacyProtocolAdapter({ transport, idStyle: 'number', requestTimeoutMs: 2000, initTimeoutMs: 2000, ...extra });
+  const adapter = createLegacyProtocolAdapter({
+    transport,
+    idStyle: 'number',
+    requestTimeoutMs: 2000,
+    initTimeoutMs: 2000,
+    ...extra,
+  });
   transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
   return adapter;
 }

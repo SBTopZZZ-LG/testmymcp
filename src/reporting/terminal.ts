@@ -1,6 +1,6 @@
 import type { TestResult } from '../core/types/test-result.js';
-import type { ReportMeta, Reporter } from './types.js';
 import { computeSummary } from './summary.js';
+import type { ReportMeta, Reporter } from './types.js';
 
 const STATUS_GLYPH: Record<string, string> = {
   pass: '✓',
@@ -30,11 +30,15 @@ function metaLine(meta?: ReportMeta): string {
   if (meta === undefined) return '';
   const parts: string[] = [];
   if (meta.protocol !== undefined) {
-    parts.push(`Protocol ${meta.protocol}${meta.protocolEra !== undefined ? ` (${meta.protocolEra})` : ''}`);
+    parts.push(
+      `Protocol ${meta.protocol}${meta.protocolEra !== undefined ? ` (${meta.protocolEra})` : ''}`,
+    );
   }
   if (meta.transport !== undefined) parts.push(`Transport ${meta.transport}`);
   if (meta.serverName !== undefined) {
-    parts.push(`Server ${meta.serverName}${meta.serverVersion !== undefined ? ` ${meta.serverVersion}` : ''}`);
+    parts.push(
+      `Server ${meta.serverName}${meta.serverVersion !== undefined ? ` ${meta.serverVersion}` : ''}`,
+    );
   }
   return parts.join('   ');
 }
@@ -53,7 +57,9 @@ export function renderTerminal(results: readonly TestResult[], meta?: ReportMeta
         : result.status === 'warn'
           ? sanitize(result.warnings?.[0] ?? '')
           : '';
-    lines.push(` ${glyph} ${result.id.padEnd(46)} ${message.padEnd(36)} ${formatDuration(result.durationMs).padStart(7)}`);
+    lines.push(
+      ` ${glyph} ${result.id.padEnd(46)} ${message.padEnd(36)} ${formatDuration(result.durationMs).padStart(7)}`,
+    );
   }
 
   lines.push('', 'Failure layers');

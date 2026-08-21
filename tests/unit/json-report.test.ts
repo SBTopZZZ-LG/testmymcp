@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildJsonReport, jsonReporter } from '../../src/reporting/json.js';
-import { createReporter } from '../../src/reporting/index.js';
+
 import { TestLevel, type TestResult } from '../../src/core/types/test-result.js';
+import { createReporter } from '../../src/reporting/index.js';
+import { buildJsonReport, jsonReporter } from '../../src/reporting/json.js';
 
 function result(partial: Partial<TestResult>): TestResult {
   return {
@@ -29,13 +30,19 @@ describe('buildJsonReport', () => {
   ];
 
   it('shapes the report for machine consumers', () => {
-    const report = buildJsonReport(results, { protocol: '2026-07-28', protocolEra: 'modern', transport: 'stdio' });
+    const report = buildJsonReport(results, {
+      protocol: '2026-07-28',
+      protocolEra: 'modern',
+      transport: 'stdio',
+    });
     expect(report.tool).toBe('testmymcp');
     expect(report.meta.protocol).toBe('2026-07-28');
     expect(report.summary.fail).toBe(1);
     expect(report.summary.byLayer.application).toBe(1);
     expect(report.tests).toHaveLength(2);
-    expect(report.errors).toEqual(expect.arrayContaining([expect.stringContaining('division by zero')]));
+    expect(report.errors).toEqual(
+      expect.arrayContaining([expect.stringContaining('division by zero')]),
+    );
     expect(report.warnings).toEqual(['tools/call sum: schema unknown']);
   });
 

@@ -1,14 +1,14 @@
-import { spawn, type ChildProcess } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { type ChildProcess, spawn } from 'node:child_process';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { protocolAdapterFactory } from '../../src/core/protocol/factory.js';
-import { defaultRunOptions, type RunOptions } from '../../src/engine/options.js';
-import { TestEngine } from '../../src/engine/engine.js';
 import { TestLevel, type TestResult } from '../../src/core/types/test-result.js';
-import { StdioTransport } from '../../src/transports/stdio/index.js';
-import { StreamableHttpTransport } from '../../src/transports/http/index.js';
 import type { SharedDiscovery } from '../../src/engine/ctx.js';
+import { TestEngine } from '../../src/engine/engine.js';
+import { type RunOptions, defaultRunOptions } from '../../src/engine/options.js';
+import { StreamableHttpTransport } from '../../src/transports/http/index.js';
+import { StdioTransport } from '../../src/transports/stdio/index.js';
 
 const fixturesDir = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures');
 
@@ -35,7 +35,10 @@ function randomPort(): number {
 async function waitForListening(child: ChildProcess, timerMs: number): Promise<void> {
   return new Promise<void>((resolvePort, reject) => {
     let stderr = '';
-    const timer = setTimeout(() => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)), timerMs);
+    const timer = setTimeout(
+      () => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)),
+      timerMs,
+    );
     child.stderr?.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');
       if (/listening on /.test(stderr)) {
@@ -59,8 +62,9 @@ function killChild(child: ChildProcess): Promise<void> {
     if (child.exitCode !== null) return resolveKill();
     child.once('exit', () => resolveKill());
     if (process.platform === 'win32') {
-      spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once('exit', () =>
-        setTimeout(resolveKill, 100),
+      spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once(
+        'exit',
+        () => setTimeout(resolveKill, 100),
       );
     } else {
       child.kill('SIGTERM');
@@ -69,7 +73,10 @@ function killChild(child: ChildProcess): Promise<void> {
   });
 }
 
-function buildEngineSetup(setup: ScenarioSetup, transport: StdioTransport | StreamableHttpTransport) {
+function buildEngineSetup(
+  setup: ScenarioSetup,
+  transport: StdioTransport | StreamableHttpTransport,
+) {
   const runOptions = defaultRunOptions({
     mode: 'safe',
     maxLevel: TestLevel.Robustness,
@@ -111,9 +118,12 @@ export async function runScenario(
 
   // streamable-http: spawn the fixture process on a random port.
   const port = randomPort();
-  const child = spawn(process.execPath, [full, '--port', String(port), ...flags], { stdio: ['ignore', 'ignore', 'pipe'] });
+  const child = spawn(process.execPath, [full, '--port', String(port), ...flags], {
+    stdio: ['ignore', 'ignore', 'pipe'],
+  });
   await waitForListening(child, 10_000);
-  const protocolVersion = setup.protocolVersion ?? (setup.era === 'modern' ? '2026-07-28' : '2025-11-25');
+  const protocolVersion =
+    setup.protocolVersion ?? (setup.era === 'modern' ? '2026-07-28' : '2025-11-25');
   const transport = new StreamableHttpTransport({
     url: `http://127.0.0.1:${port}/`,
     protocolVersion,

@@ -1,7 +1,11 @@
-import type {
-  ClientCapabilities,
-} from '../../core/protocol/capabilities.js';
-import { emptyClientCapabilities } from '../../core/protocol/capabilities.js';
+import { type IdStyle, createIdGenerator } from '../../core/jsonrpc/id.js';
+import {
+  type JsonRpcId,
+  createNotification,
+  createRequest,
+  responseKey,
+} from '../../core/jsonrpc/messages.js';
+import { JsonRpcRemoteError, RequestMultiplexer } from '../../core/jsonrpc/multiplexer.js';
 import type {
   InitializeOptions,
   LifecycleState,
@@ -9,12 +13,11 @@ import type {
   ProtocolAdapter,
   ServerInfo,
 } from '../../core/protocol/adapter.js';
-import type { ProtocolEra, ProtocolVersion } from '../../core/types/protocol.js';
-import { createNotification, createRequest, responseKey, type JsonRpcId } from '../../core/jsonrpc/messages.js';
-import { createIdGenerator, type IdStyle } from '../../core/jsonrpc/id.js';
-import { JsonRpcRemoteError, RequestMultiplexer } from '../../core/jsonrpc/multiplexer.js';
+import type { ClientCapabilities } from '../../core/protocol/capabilities.js';
+import { emptyClientCapabilities } from '../../core/protocol/capabilities.js';
 import type { TimeoutKind } from '../../core/timeouts/deadline.js';
 import type { TraceStore } from '../../core/tracing/store.js';
+import type { ProtocolEra, ProtocolVersion } from '../../core/types/protocol.js';
 import type { Transport } from '../../transports/transport.js';
 import { buildInitializeParams, parseInitializeResult } from './initialize.js';
 
@@ -135,7 +138,11 @@ export class LegacyProtocolAdapter implements ProtocolAdapter {
     const response = await registered;
     this.traceIn(response, request.id);
     if (response.error !== undefined) {
-      throw new JsonRpcRemoteError(response.error.code, response.error.message, response.error.data);
+      throw new JsonRpcRemoteError(
+        response.error.code,
+        response.error.message,
+        response.error.data,
+      );
     }
     return response.result as T;
   }
@@ -175,7 +182,10 @@ export class LegacyProtocolAdapter implements ProtocolAdapter {
   private traceOut(message: object): void {
     if (this.trace === undefined) return;
     const record = message as Record<string, unknown>;
-    const key = typeof record.id === 'number' || typeof record.id === 'string' ? responseKey(record.id) : undefined;
+    const key =
+      typeof record.id === 'number' || typeof record.id === 'string'
+        ? responseKey(record.id)
+        : undefined;
     const now = this.clock();
     if (key !== undefined) this.startedAt.set(key, now);
     this.trace.add({
@@ -189,7 +199,10 @@ export class LegacyProtocolAdapter implements ProtocolAdapter {
     });
   }
 
-  private traceIn(response: { id: JsonRpcId; error?: { code: number; message: string } | undefined }, requestId: JsonRpcId): void {
+  private traceIn(
+    response: { id: JsonRpcId; error?: { code: number; message: string } | undefined },
+    requestId: JsonRpcId,
+  ): void {
     if (this.trace === undefined) return;
     const key = responseKey(requestId);
     const started = this.startedAt.get(key);

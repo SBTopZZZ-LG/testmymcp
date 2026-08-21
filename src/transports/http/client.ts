@@ -1,8 +1,6 @@
-import { request, type Dispatcher } from 'undici';
-import type {
-  AuthConfig,
-  HttpRequestOptions,
-} from './types.js';
+import { type Dispatcher, request } from 'undici';
+
+import type { AuthConfig, HttpRequestOptions } from './types.js';
 
 export type ResponseHeaders = Dispatcher.ResponseData['headers'];
 

@@ -30,7 +30,15 @@ function checkProtocol(message) {
   const meta = readMeta(message);
   const version = meta ? meta['io.modelcontextprotocol/protocolVersion'] : undefined;
   if (typeof version !== 'string' || !SUPPORTED.includes(version)) {
-    return { jsonrpc: '2.0', id: message.id, error: { code: -32022, message: 'Unsupported protocol version', data: { supported: SUPPORTED } } };
+    return {
+      jsonrpc: '2.0',
+      id: message.id,
+      error: {
+        code: -32022,
+        message: 'Unsupported protocol version',
+        data: { supported: SUPPORTED },
+      },
+    };
   }
   if (message.id !== undefined && !meta) {
     return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: 'missing _meta' } };
@@ -52,7 +60,12 @@ function handleMessage(message) {
           resultType: 'complete',
           supportedVersions: SUPPORTED,
           capabilities: { tools: { listChanged: true }, resources: {}, prompts: {} },
-          _meta: { 'io.modelcontextprotocol/serverInfo': { name: 'modern-stdio-fake-server', version: '1.0.0' } },
+          _meta: {
+            'io.modelcontextprotocol/serverInfo': {
+              name: 'modern-stdio-fake-server',
+              version: '1.0.0',
+            },
+          },
           instructions: 'Modern stateless stdio fixture',
           ttlMs: 60000,
           cacheScope: 'public',
@@ -60,26 +73,45 @@ function handleMessage(message) {
       };
 
     case 'tools/list':
-      return { jsonrpc: '2.0', id: message.id, result: { resultType: 'complete', tools, ttlMs: 60000, cacheScope: 'public' } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        result: { resultType: 'complete', tools, ttlMs: 60000, cacheScope: 'public' },
+      };
 
     case 'tools/call': {
       const name = message.params?.name;
       const callArgs = message.params?.arguments;
       if (name === 'sum') {
         if (!callArgs || typeof callArgs.a !== 'number' || typeof callArgs.b !== 'number') {
-          return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: 'a and b must be integers' } };
+          return {
+            jsonrpc: '2.0',
+            id: message.id,
+            error: { code: -32602, message: 'a and b must be integers' },
+          };
         }
         return {
           jsonrpc: '2.0',
           id: message.id,
-          result: { resultType: 'complete', content: [{ type: 'text', text: String(callArgs.a + callArgs.b) }] },
+          result: {
+            resultType: 'complete',
+            content: [{ type: 'text', text: String(callArgs.a + callArgs.b) }],
+          },
         };
       }
-      return { jsonrpc: '2.0', id: message.id, error: { code: -32602, message: `unknown tool: ${String(name ?? '?')}` } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: { code: -32602, message: `unknown tool: ${String(name ?? '?')}` },
+      };
     }
 
     default:
-      return { jsonrpc: '2.0', id: message.id, error: { code: -32601, message: `method not found: ${String(message.method)}` } };
+      return {
+        jsonrpc: '2.0',
+        id: message.id,
+        error: { code: -32601, message: `method not found: ${String(message.method)}` },
+      };
   }
 }
 
@@ -91,7 +123,9 @@ rl.on('line', (line) => {
   try {
     message = JSON.parse(trimmed);
   } catch {
-    process.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } })}\n`);
+    process.stdout.write(
+      `${JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'parse error' } })}\n`,
+    );
     return;
   }
   const response = handleMessage(message);

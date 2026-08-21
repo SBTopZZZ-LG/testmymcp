@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { computeSummary } from '../../src/reporting/summary.js';
+
 import { TestLevel, type TestResult } from '../../src/core/types/test-result.js';
+import { computeSummary } from '../../src/reporting/summary.js';
 
 function result(partial: Partial<TestResult>): TestResult {
   return {
@@ -18,8 +19,16 @@ describe('computeSummary', () => {
   it('counts statuses, categories, and failure layers', () => {
     const results = [
       result({ status: 'pass' }),
-      result({ status: 'fail', category: 'connectivity', error: { layer: 'transport', type: 'spawn', message: 'no' } }),
-      result({ status: 'fail', category: 'capability', error: { layer: 'application', type: 'tool', message: 'nope' } }),
+      result({
+        status: 'fail',
+        category: 'connectivity',
+        error: { layer: 'transport', type: 'spawn', message: 'no' },
+      }),
+      result({
+        status: 'fail',
+        category: 'capability',
+        error: { layer: 'application', type: 'tool', message: 'nope' },
+      }),
       result({ status: 'warn', warnings: ['slow'], category: 'discovery' }),
       result({ status: 'skip' }),
     ];

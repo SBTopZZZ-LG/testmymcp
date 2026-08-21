@@ -1,4 +1,5 @@
 import type { Readable } from 'node:stream';
+
 import { CodecError } from '../../core/jsonrpc/codec.js';
 
 export interface SseFieldEvent {

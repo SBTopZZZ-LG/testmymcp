@@ -36,7 +36,9 @@ function hasId(value: Record<string, unknown>): boolean {
   return 'id' in value && (typeof value.id === 'number' || typeof value.id === 'string');
 }
 
-function hasMethod(value: Record<string, unknown>): value is Record<string, unknown> & { method: string } {
+function hasMethod(
+  value: Record<string, unknown>,
+): value is Record<string, unknown> & { method: string } {
   return typeof value.method === 'string';
 }
 
@@ -56,7 +58,8 @@ export function isNotification(value: unknown): value is JsonRpcNotification {
 }
 
 export function isResponse(value: unknown): value is JsonRpcResponse {
-  if (!isRecord(value) || value.jsonrpc !== '2.0' || !hasId(value) || hasMethod(value)) return false;
+  if (!isRecord(value) || value.jsonrpc !== '2.0' || !hasId(value) || hasMethod(value))
+    return false;
   const hasResult = value.result !== undefined;
   const hasError = value.error !== undefined;
   return hasResult !== hasError;
@@ -78,7 +81,12 @@ export function createResponse(id: JsonRpcId, result: unknown): JsonRpcResponse 
   return { jsonrpc: '2.0', id, result };
 }
 
-export function createErrorResponse(id: JsonRpcId, code: number, message: string, data?: unknown): JsonRpcResponse {
+export function createErrorResponse(
+  id: JsonRpcId,
+  code: number,
+  message: string,
+  data?: unknown,
+): JsonRpcResponse {
   const error: JsonRpcErrorObject = { code, message };
   if (data !== undefined) error.data = data;
   return { jsonrpc: '2.0', id, error };

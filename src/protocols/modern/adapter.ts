@@ -1,5 +1,11 @@
-import type { ClientCapabilities } from '../../core/protocol/capabilities.js';
-import { emptyClientCapabilities } from '../../core/protocol/capabilities.js';
+import { type IdStyle, createIdGenerator } from '../../core/jsonrpc/id.js';
+import {
+  type JsonRpcId,
+  createNotification,
+  createRequest,
+  responseKey,
+} from '../../core/jsonrpc/messages.js';
+import { JsonRpcRemoteError, RequestMultiplexer } from '../../core/jsonrpc/multiplexer.js';
 import type {
   InitializeOptions,
   LifecycleState,
@@ -7,17 +13,22 @@ import type {
   ProtocolAdapter,
   ServerInfo,
 } from '../../core/protocol/adapter.js';
-import type { ProtocolEra, ProtocolVersion } from '../../core/types/protocol.js';
-import { createNotification, createRequest, responseKey, type JsonRpcId } from '../../core/jsonrpc/messages.js';
-import { createIdGenerator, type IdStyle } from '../../core/jsonrpc/id.js';
-import { JsonRpcRemoteError, RequestMultiplexer } from '../../core/jsonrpc/multiplexer.js';
+import type { ClientCapabilities } from '../../core/protocol/capabilities.js';
+import { emptyClientCapabilities } from '../../core/protocol/capabilities.js';
 import type { TimeoutKind } from '../../core/timeouts/deadline.js';
 import type { TraceStore } from '../../core/tracing/store.js';
+import type { ProtocolEra, ProtocolVersion } from '../../core/types/protocol.js';
 import type { Transport } from '../../transports/transport.js';
-import { parseDiscoverResult, selectSupportedVersion, type DiscoverResult } from './discover.js';
-import { withRequestMeta, type ModernRequestMeta } from './request-meta.js';
-import { isInputRequiredResult, parseInputRequests, parseRequestState, buildInputRetryParams, buildInputResponse, type InputResponses } from './mrtr.js';
-
+import { type DiscoverResult, parseDiscoverResult, selectSupportedVersion } from './discover.js';
+import {
+  type InputResponses,
+  buildInputResponse,
+  buildInputRetryParams,
+  isInputRequiredResult,
+  parseInputRequests,
+  parseRequestState,
+} from './mrtr.js';
+import { type ModernRequestMeta, withRequestMeta } from './request-meta.js';
 
 export interface ModernAdapterOptions {
   transport: Transport;
@@ -109,7 +120,10 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
     const discovered = await this.discover();
     this.discovered = discovered;
 
-    const protocolVersion = selectSupportedVersion(discovered.supportedVersions, this.preferVersion);
+    const protocolVersion = selectSupportedVersion(
+      discovered.supportedVersions,
+      this.preferVersion,
+    );
     if (protocolVersion === undefined) {
       throw new Error(
         `server/discover returned no supported protocol version (supported: ${JSON.stringify(discovered.supportedVersions)})`,
@@ -153,13 +167,23 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
     const maxRetries = 8;
 
     for (let attempt = 0; ; attempt += 1) {
-      const result = await this.sendRequest<T>(attemptId, method, attemptParams, timeoutMs, timeoutKind);
+      const result = await this.sendRequest<T>(
+        attemptId,
+        method,
+        attemptParams,
+        timeoutMs,
+        timeoutKind,
+      );
       // MRTR: server returned input_required — client must retry with inputResponses.
       if (this.autoMrtr && isInputRequiredResult(result)) {
         const responses = this.collectInputResponses(result);
         const requestState = parseRequestState(result);
         if (attempt >= maxRetries) {
-          throw new JsonRpcRemoteError(-32602, `request could not be completed after ${maxRetries + 1} input responses`, result);
+          throw new JsonRpcRemoteError(
+            -32602,
+            `request could not be completed after ${maxRetries + 1} input responses`,
+            result,
+          );
         }
         attemptId = this.idGen();
         attemptParams = buildInputRetryParams(modernParams, responses, requestState);
@@ -259,7 +283,11 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
       const response = await registered;
       this.traceIn(response, request.id);
       if (response.error !== undefined) {
-        throw new JsonRpcRemoteError(response.error.code, response.error.message, response.error.data);
+        throw new JsonRpcRemoteError(
+          response.error.code,
+          response.error.message,
+          response.error.data,
+        );
       }
       return response.result as T;
     })();
@@ -279,7 +307,8 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
    * transports that do not support header mirroring.
    */
   setToolSchemas(tools: Array<{ name: string; inputSchema?: unknown }>): void {
-    const setter = (this.transport as { setToolInputSchemas?(s: unknown): void }).setToolInputSchemas;
+    const setter = (this.transport as { setToolInputSchemas?(s: unknown): void })
+      .setToolInputSchemas;
     if (typeof setter === 'function') setter.call(this.transport, tools);
   }
 
@@ -289,8 +318,15 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
     return (await this.request('tasks/get', { taskId }, timeoutMs)) as Record<string, unknown>;
   }
 
-  async tasksUpdate(taskId: string, inputResponses: InputResponses, timeoutMs?: number): Promise<Record<string, unknown>> {
-    return (await this.request('tasks/update', { taskId, inputResponses }, timeoutMs)) as Record<string, unknown>;
+  async tasksUpdate(
+    taskId: string,
+    inputResponses: InputResponses,
+    timeoutMs?: number,
+  ): Promise<Record<string, unknown>> {
+    return (await this.request('tasks/update', { taskId, inputResponses }, timeoutMs)) as Record<
+      string,
+      unknown
+    >;
   }
 
   async tasksCancel(taskId: string, timeoutMs?: number): Promise<Record<string, unknown>> {
@@ -304,7 +340,10 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
    * returns `input_required`, the tester answers via `tasks/update`. Bounded by
    * `maxPollMs` (default `requestTimeoutMs`) and each `pollIntervalMs`.
    */
-  async pollTask(taskId: string, options?: { maxPollMs?: number; pollIntervalMs?: number }): Promise<Record<string, unknown>> {
+  async pollTask(
+    taskId: string,
+    options?: { maxPollMs?: number; pollIntervalMs?: number },
+  ): Promise<Record<string, unknown>> {
     const maxPollMs = options?.maxPollMs ?? this.requestTimeoutMs;
     const deadline = this.clock() + maxPollMs;
     let status: Record<string, unknown> = await this.tasksGet(taskId);
@@ -319,9 +358,15 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
         continue;
       }
       // working / unknown non-terminal — wait and re-poll.
-      const interval = options?.pollIntervalMs ?? (typeof status.pollIntervalMs === 'number' ? status.pollIntervalMs : 200);
+      const interval =
+        options?.pollIntervalMs ??
+        (typeof status.pollIntervalMs === 'number' ? status.pollIntervalMs : 200);
       if (this.clock() + interval > deadline) {
-        throw new JsonRpcRemoteError(-32602, `task ${taskId} did not reach a terminal status within ${maxPollMs}ms`, status);
+        throw new JsonRpcRemoteError(
+          -32602,
+          `task ${taskId} did not reach a terminal status within ${maxPollMs}ms`,
+          status,
+        );
       }
       await new Promise((resolve) => setTimeout(resolve, interval));
       status = await this.tasksGet(taskId);
@@ -345,7 +390,10 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
   private traceOut(message: object): void {
     if (this.trace === undefined) return;
     const record = message as Record<string, unknown>;
-    const key = typeof record.id === 'number' || typeof record.id === 'string' ? responseKey(record.id) : undefined;
+    const key =
+      typeof record.id === 'number' || typeof record.id === 'string'
+        ? responseKey(record.id)
+        : undefined;
     const now = this.clock();
     if (key !== undefined) this.startedAt.set(key, now);
     this.trace.add({
@@ -359,7 +407,10 @@ export class ModernProtocolAdapter implements ProtocolAdapter {
     });
   }
 
-  private traceIn(response: { id: JsonRpcId; error?: { code: number; message: string } | undefined }, requestId: JsonRpcId): void {
+  private traceIn(
+    response: { id: JsonRpcId; error?: { code: number; message: string } | undefined },
+    requestId: JsonRpcId,
+  ): void {
     if (this.trace === undefined) return;
     const key = responseKey(requestId);
     const started = this.startedAt.get(key);

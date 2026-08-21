@@ -1,18 +1,21 @@
-import { describe, expect, it } from 'vitest';
 import { spawn } from 'node:child_process';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
 
-import { TestLevel, type TestResult } from '../../src/core/types/test-result.js';
 import { protocolAdapterFactory } from '../../src/core/protocol/factory.js';
-import { defaultRunOptions } from '../../src/engine/options.js';
+import { TestLevel, type TestResult } from '../../src/core/types/test-result.js';
 import { TestEngine } from '../../src/engine/engine.js';
+import { defaultRunOptions } from '../../src/engine/options.js';
+import { SUITES } from '../../src/suites/index.js';
+import { followListPages } from '../../src/suites/pagination.js';
 import { StreamableHttpTransport } from '../../src/transports/http/index.js';
 import { StdioTransport } from '../../src/transports/stdio/index.js';
-import { followListPages } from '../../src/suites/pagination.js';
-import { SUITES } from '../../src/suites/index.js';
 
-const modernFixture = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/modern-server.js');
+const modernFixture = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../fixtures/modern-server.js',
+);
 const httpFixture = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/http-server.js');
 const stdioFixture = resolve(dirname(fileURLToPath(import.meta.url)), '../fixtures/fake-server.js');
 
@@ -32,7 +35,10 @@ async function startHttpFixture(fixturePath: string, flags: string[] = []): Prom
   });
   await new Promise<void>((resolvePort, reject) => {
     let stderr = '';
-    const timer = setTimeout(() => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)), 10_000);
+    const timer = setTimeout(
+      () => reject(new Error(`fixture startup timed out; stderr: ${stderr}`)),
+      10_000,
+    );
     child.stderr?.on('data', (chunk: Buffer) => {
       stderr += chunk.toString('utf8');
       if (/listening on /.test(stderr)) {
@@ -56,8 +62,9 @@ async function startHttpFixture(fixturePath: string, flags: string[] = []): Prom
         if (child.exitCode !== null) return resolveKill();
         child.once('exit', () => resolveKill());
         if (process.platform === 'win32') {
-          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once('exit', () =>
-            setTimeout(resolveKill, 100),
+          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }).once(
+            'exit',
+            () => setTimeout(resolveKill, 100),
           );
         } else {
           child.kill('SIGTERM');
@@ -78,14 +85,23 @@ describe('Phase 4: behavioral + robustness suites run cleanly at every level', (
     const fixture = await startHttpFixture(modernFixture);
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 12_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 12_000,
+      });
       const runOptions = defaultRunOptions({
         mode: 'safe',
         maxLevel: TestLevel.Robustness,
         defaultTimeoutMs: 20_000,
         requestTimeoutMs: 12_000,
       });
-      const adapter = protocolAdapterFactory.create('modern', { transport, requestTimeoutMs: 12_000, initTimeoutMs: 5000 });
+      const adapter = protocolAdapterFactory.create('modern', {
+        transport,
+        requestTimeoutMs: 12_000,
+        initTimeoutMs: 5000,
+      });
       const engine = new TestEngine({ adapter, transport, options: runOptions });
       let results: TestResult[] = [];
       try {
@@ -111,14 +127,21 @@ describe('Phase 4: behavioral + robustness suites run cleanly at every level', (
   }, 60000);
 
   it('legacy (stdio): level Robustness run has 0 fails and runs the new suites', async () => {
-    const transport = new StdioTransport({ command: `node "${stdioFixture}"`.trim(), shutdownTimeoutMs: 5000 });
+    const transport = new StdioTransport({
+      command: `node "${stdioFixture}"`.trim(),
+      shutdownTimeoutMs: 5000,
+    });
     const runOptions = defaultRunOptions({
       mode: 'safe',
       maxLevel: TestLevel.Robustness,
       defaultTimeoutMs: 20_000,
       requestTimeoutMs: 15_000,
     });
-    const adapter = protocolAdapterFactory.create('legacy', { transport, requestTimeoutMs: 15_000, initTimeoutMs: 5000 });
+    const adapter = protocolAdapterFactory.create('legacy', {
+      transport,
+      requestTimeoutMs: 15_000,
+      initTimeoutMs: 5000,
+    });
     const engine = new TestEngine({ adapter, transport, options: runOptions });
     let results: TestResult[] = [];
     try {
@@ -139,14 +162,22 @@ describe('Phase 4: behavioral + robustness suites run cleanly at every level', (
     const fixture = await startHttpFixture(httpFixture);
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2025-11-25', requestTimeoutMs: 12_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2025-11-25',
+        requestTimeoutMs: 12_000,
+      });
       const runOptions = defaultRunOptions({
         mode: 'safe',
         maxLevel: TestLevel.Robustness,
         defaultTimeoutMs: 20_000,
         requestTimeoutMs: 12_000,
       });
-      const adapter = protocolAdapterFactory.create('legacy', { transport, requestTimeoutMs: 12_000, initTimeoutMs: 5000 });
+      const adapter = protocolAdapterFactory.create('legacy', {
+        transport,
+        requestTimeoutMs: 12_000,
+        initTimeoutMs: 5000,
+      });
       const engine = new TestEngine({ adapter, transport, options: runOptions });
       let results: TestResult[] = [];
       try {
@@ -166,15 +197,29 @@ describe('Phase 4: cursor-based pagination is followed to exhaustion', () => {
     const fixture = await startHttpFixture(modernFixture, ['--paginate']);
     try {
       const url = `http://127.0.0.1:${fixture.port}/`;
-      const transport = new StreamableHttpTransport({ url, protocolVersion: '2026-07-28', era: 'modern', requestTimeoutMs: 12_000 });
+      const transport = new StreamableHttpTransport({
+        url,
+        protocolVersion: '2026-07-28',
+        era: 'modern',
+        requestTimeoutMs: 12_000,
+      });
       const adapter = protocolAdapterFactory.create('modern', { transport, initTimeoutMs: 5000 });
       transport.observer = { onMessage: (message) => adapter.mux.handleMessage(message) };
       await adapter.connect();
       await adapter.initialize();
 
-      const first = (await adapter.request('tools/list', undefined, 8000)) as Record<string, unknown>;
+      const first = (await adapter.request('tools/list', undefined, 8000)) as Record<
+        string,
+        unknown
+      >;
       expect(first.nextCursor).toBe('1');
-      const followed = await followListPages(adapter, { method: 'tools/list', itemKey: 'tools' }, first, 8000, 10);
+      const followed = await followListPages(
+        adapter,
+        { method: 'tools/list', itemKey: 'tools' },
+        first,
+        8000,
+        10,
+      );
       const names = (followed.items as Array<Record<string, unknown>>).map((t) => t.name).sort();
       expect(names).toEqual(['big_echo', 'echo', 'slow', 'sum']);
       expect(followed.pages).toBe(4);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { classifyTool, executionDecision } from '../../src/core/tools/safety.js';
 
 describe('tool safety classification', () => {

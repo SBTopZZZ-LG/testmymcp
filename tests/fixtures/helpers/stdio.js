@@ -1,5 +1,4 @@
 // Shared helpers for stdio (NDJSON) MCP fixture servers.
-
 import readline from 'node:readline';
 
 export function argsOf() {

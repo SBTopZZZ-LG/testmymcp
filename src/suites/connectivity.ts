@@ -1,6 +1,6 @@
 import { TestLevel, type TestResult } from '../core/types/test-result.js';
-import { fail, pass, warn } from '../engine/result.js';
 import type { SuiteContext } from '../engine/ctx.js';
+import { fail, pass, warn } from '../engine/result.js';
 
 const SETTLE_WINDOW_MS = 150;
 const POLL_INTERVAL_MS = 25;

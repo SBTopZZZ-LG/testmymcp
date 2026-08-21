@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+
 import type { TraceMessage, TraceStoreJson } from '../types/trace.js';
 import { redactDeep, redactString } from './redaction.js';
 
@@ -10,7 +11,10 @@ export interface TraceStoreOptions {
   maxEntries?: number;
 }
 
-export type TraceInput = Omit<TraceMessage, 'id' | 'timestamp'> & { id?: string; timestamp?: number };
+export type TraceInput = Omit<TraceMessage, 'id' | 'timestamp'> & {
+  id?: string;
+  timestamp?: number;
+};
 
 export class TraceStore {
   private readonly messages: TraceMessage[] = [];
@@ -33,9 +37,14 @@ export class TraceStore {
   }
 
   add(input: TraceInput): TraceMessage {
-    const raw = this.redact && !this.showSecrets && input.raw !== undefined ? redactString(input.raw) : input.raw;
+    const raw =
+      this.redact && !this.showSecrets && input.raw !== undefined
+        ? redactString(input.raw)
+        : input.raw;
     const payload =
-      input.payload === undefined || !this.redact || this.showSecrets ? input.payload : redactDeep(input.payload);
+      input.payload === undefined || !this.redact || this.showSecrets
+        ? input.payload
+        : redactDeep(input.payload);
     const message: TraceMessage = {
       ...input,
       id: input.id ?? randomUUID(),
@@ -71,6 +80,11 @@ export class TraceStore {
   }
 
   toJSON(): TraceStoreJson {
-    return { kind: 'mcp-trace', version: 1, count: this.messages.length, messages: [...this.messages] };
+    return {
+      kind: 'mcp-trace',
+      version: 1,
+      count: this.messages.length,
+      messages: [...this.messages],
+    };
   }
 }

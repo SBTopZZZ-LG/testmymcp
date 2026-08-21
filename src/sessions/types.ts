@@ -1,7 +1,7 @@
 import type { ProtocolEra, ProtocolVersion } from '../core/types/protocol.js';
-import type { AuthConfig } from '../transports/http/types.js';
 import type { StreamableHttpAccept } from '../transports/http/streamable-http-transport.js';
-import { sanitizeEnvForStore, expandStoredEnv } from './env.js';
+import type { AuthConfig } from '../transports/http/types.js';
+import { expandStoredEnv, sanitizeEnvForStore } from './env.js';
 
 export type HttpTransportKind = 'streamable-http' | 'legacy-sse';
 
@@ -130,4 +130,3 @@ export function expandStoredTarget(
     accept: stored.accept,
   };
 }
-

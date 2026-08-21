@@ -55,7 +55,10 @@ export function validateAgainstSchema(
   return { valid, errors };
 }
 
-export function isValidSchema(schema: unknown, maxBytes = DEFAULT_MAX_SCHEMA_BYTES): ValidationResult {
+export function isValidSchema(
+  schema: unknown,
+  maxBytes = DEFAULT_MAX_SCHEMA_BYTES,
+): ValidationResult {
   try {
     compileSchema(schema, maxBytes);
     return { valid: true, errors: [] };
@@ -146,11 +149,7 @@ export function generateValidInput(
     }
     return generated;
   }
-  if (
-    type === 'object' ||
-    type === undefined ||
-    (Array.isArray(type) && type.includes('object'))
-  ) {
+  if (type === 'object' || type === undefined || (Array.isArray(type) && type.includes('object'))) {
     const output: Record<string, unknown> = {};
     const properties = isRecord(resolved.properties) ? resolved.properties : undefined;
     const required = Array.isArray(resolved.required) ? resolved.required : [];
@@ -167,7 +166,11 @@ export function generateValidInput(
   return undefined;
 }
 
-function resolveRefs(schema: SchemaObject, stack: object[], root: SchemaObject): SchemaObject | undefined {
+function resolveRefs(
+  schema: SchemaObject,
+  stack: object[],
+  root: SchemaObject,
+): SchemaObject | undefined {
   let current: SchemaObject = schema;
   for (let guard = 0; guard < 64; guard += 1) {
     if (typeof current.$ref !== 'string') return current;

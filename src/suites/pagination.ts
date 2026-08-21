@@ -3,14 +3,22 @@ import type { ProtocolAdapter } from '../core/protocol/adapter.js';
 function nextCursorOf(result: unknown): string | undefined {
   if (typeof result !== 'object' || result === null) return undefined;
   const r = result as Record<string, unknown>;
-  const cursor = r['nextCursor'] ?? (typeof r['result'] === 'object' && r['result'] !== null ? (r['result'] as Record<string, unknown>)['nextCursor'] : undefined);
+  const cursor =
+    r['nextCursor'] ??
+    (typeof r['result'] === 'object' && r['result'] !== null
+      ? (r['result'] as Record<string, unknown>)['nextCursor']
+      : undefined);
   return typeof cursor === 'string' && cursor.length > 0 ? cursor : undefined;
 }
 
 function itemsOf(result: unknown, key: 'tools' | 'resources'): unknown[] {
   if (typeof result !== 'object' || result === null) return [];
   const r = result as Record<string, unknown>;
-  const arr = r[key] ?? (typeof r['result'] === 'object' && r['result'] !== null ? (r['result'] as Record<string, unknown>)[key] : undefined);
+  const arr =
+    r[key] ??
+    (typeof r['result'] === 'object' && r['result'] !== null
+      ? (r['result'] as Record<string, unknown>)[key]
+      : undefined);
   return Array.isArray(arr) ? (arr as unknown[]) : [];
 }
 
@@ -37,7 +45,11 @@ export async function followListPages(
   let pages = 1;
   let truncated = false;
   while (cursor !== undefined && pages < maxPages) {
-    const result = await adapter.request(follow.method, { ...(follow.initialParams ?? {}), cursor }, timeoutMs);
+    const result = await adapter.request(
+      follow.method,
+      { ...(follow.initialParams ?? {}), cursor },
+      timeoutMs,
+    );
     items.push(...itemsOf(result, follow.itemKey));
     const next = nextCursorOf(result);
     pages += 1;

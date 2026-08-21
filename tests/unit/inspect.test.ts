@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { renderTimeline, runInspect } from '../../src/cli/inspect.js';
 import type { TraceMessage } from '../../src/core/types/trace.js';
 
@@ -18,9 +19,23 @@ describe('inspect', () => {
 
   it('renders a chronological timeline', () => {
     const messages: TraceMessage[] = [
-      { id: 'a', timestamp: 1000, direction: 'out', kind: 'request', method: 'initialize', requestId: 1 },
+      {
+        id: 'a',
+        timestamp: 1000,
+        direction: 'out',
+        kind: 'request',
+        method: 'initialize',
+        requestId: 1,
+      },
       { id: 'b', timestamp: 1005, direction: 'in', kind: 'response', requestId: 1, latencyMs: 5 },
-      { id: 'c', timestamp: 1002, direction: 'out', kind: 'request', method: 'tools/list', requestId: 2 },
+      {
+        id: 'c',
+        timestamp: 1002,
+        direction: 'out',
+        kind: 'request',
+        method: 'tools/list',
+        requestId: 2,
+      },
     ];
     const timeline = renderTimeline(messages).split('\n');
     expect(timeline).toHaveLength(3);
@@ -37,7 +52,14 @@ describe('inspect', () => {
       version: 1,
       count: 2,
       messages: [
-        { id: 'a', timestamp: 100, direction: 'out', kind: 'request', method: 'ping', requestId: 1 },
+        {
+          id: 'a',
+          timestamp: 100,
+          direction: 'out',
+          kind: 'request',
+          method: 'ping',
+          requestId: 1,
+        },
         { id: 'b', timestamp: 200, direction: 'in', kind: 'response', requestId: 1 },
       ],
     };
@@ -45,7 +67,9 @@ describe('inspect', () => {
 
     const exitCode = await runInspect(file);
     expect(exitCode).toBe(0);
-    expect(logSpy.mock.calls.some((call: unknown[]) => String(call[0]).includes('ping'))).toBe(true);
+    expect(logSpy.mock.calls.some((call: unknown[]) => String(call[0]).includes('ping'))).toBe(
+      true,
+    );
     await rm(dir, { recursive: true, force: true });
   });
 

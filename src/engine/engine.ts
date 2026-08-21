@@ -1,13 +1,13 @@
-import { TestLevel, type TestResult } from '../core/types/test-result.js';
-import { withDeadline, TimeoutError } from '../core/timeouts/deadline.js';
 import type { ProtocolAdapter } from '../core/protocol/adapter.js';
+import { TimeoutError, withDeadline } from '../core/timeouts/deadline.js';
 import type { TraceStore } from '../core/tracing/store.js';
+import { TestLevel, type TestResult } from '../core/types/test-result.js';
+import { selectSuites } from '../suites/index.js';
 import type { ExitInfo, Transport, TransportObserver } from '../transports/transport.js';
 import type { ObservedTransportEvents, SharedDiscovery, SuiteContext } from './ctx.js';
 import { createObservedEvents, createSharedDiscovery } from './ctx.js';
 import type { RunOptions } from './options.js';
 import { fail, fromError } from './result.js';
-import { selectSuites } from '../suites/index.js';
 
 const MAX_OBSERVED_LINES = 1000;
 const MAX_OBSERVED_OVERSIZE = 100;
@@ -36,7 +36,9 @@ export class TestEngine {
 
     let results: TestResult[] = [];
     try {
-      results = await withDeadline({ kind: 'test', ms: options.defaultTimeoutMs }, () => this.runInternal());
+      results = await withDeadline({ kind: 'test', ms: options.defaultTimeoutMs }, () =>
+        this.runInternal(),
+      );
     } catch (error) {
       if (error instanceof TimeoutError) {
         results.push(
@@ -129,6 +131,13 @@ export class TestEngine {
       },
       onExit: (exit: ExitInfo) => {
         this.observed.exit = exit;
+        // A server that has exited will never respond to in-flight requests;
+        // fail them immediately rather than letting them hang until timeout.
+        adapter.mux.failAll(
+          new Error(
+            `server exited prematurely (code ${exit.code}, signal ${exit.signal ?? 'none'})`,
+          ),
+        );
         trace?.add({
           direction: 'in',
           kind: 'event',

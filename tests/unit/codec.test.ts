@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CodecError, encodeNdjson, NdjsonReader, parseNdjsonLine } from '../../src/core/jsonrpc/codec.js';
+
+import {
+  CodecError,
+  NdjsonReader,
+  encodeNdjson,
+  parseNdjsonLine,
+} from '../../src/core/jsonrpc/codec.js';
 
 describe('NDJSON codec', () => {
   it('round-trips a message', () => {
@@ -36,7 +42,9 @@ describe('NDJSON codec', () => {
 
   it('handles multiple messages arriving in one chunk', () => {
     const reader = new NdjsonReader();
-    const events = reader.push('{"jsonrpc":"2.0","id":1,"method":"init"}\n{"jsonrpc":"2.0","id":2,"method":"list"}\n');
+    const events = reader.push(
+      '{"jsonrpc":"2.0","id":1,"method":"init"}\n{"jsonrpc":"2.0","id":2,"method":"list"}\n',
+    );
     expect(events).toHaveLength(2);
     expect(events[0]).toMatchObject({ kind: 'message', message: { id: 1 } });
     expect(events[1]).toMatchObject({ kind: 'message', message: { id: 2 } });
@@ -65,20 +73,30 @@ describe('NDJSON codec', () => {
 
   it('preserves UTF-8 correctness across chunk boundaries', () => {
     const reader = new NdjsonReader();
-    const line = encodeNdjson({ jsonrpc: '2.0', id: 1, method: 'emoji', params: { text: '😭ಕನ್ನಡ日本語' } });
+    const line = encodeNdjson({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'emoji',
+      params: { text: '😭ಕನ್ನಡ日本語' },
+    });
     const bytes = new TextEncoder().encode(line);
     const split = Math.floor(bytes.length / 2);
     const first = reader.push(bytes.subarray(0, split));
     const second = reader.push(bytes.subarray(split));
     expect(first).toEqual([]);
     expect(second).toHaveLength(1);
-    expect(second[0]).toMatchObject({ kind: 'message', message: { params: { text: '😭ಕನ್ನಡ日本語' } } });
+    expect(second[0]).toMatchObject({
+      kind: 'message',
+      message: { params: { text: '😭ಕನ್ನಡ日本語' } },
+    });
   });
 
   it('flushes a trailing message without a newline', () => {
     const reader = new NdjsonReader();
     reader.push('{"jsonrpc":"2.0","id":9,"method":"ping"}');
-    expect(reader.flush()).toEqual([{ kind: 'message', message: { jsonrpc: '2.0', id: 9, method: 'ping' } }]);
+    expect(reader.flush()).toEqual([
+      { kind: 'message', message: { jsonrpc: '2.0', id: 9, method: 'ping' } },
+    ]);
     expect(reader.flush()).toEqual([]);
   });
 

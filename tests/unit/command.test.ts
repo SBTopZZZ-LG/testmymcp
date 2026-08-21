@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { parseServerCommand } from '../../src/transports/command.js';
 
 describe('parseServerCommand', () => {

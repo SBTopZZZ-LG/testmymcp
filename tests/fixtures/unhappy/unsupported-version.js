@@ -1,6 +1,6 @@
 // Unhappy fixture (modern HTTP): rejects every request with
 // UnsupportedProtocolVersionError (-32022), including server/discover.
-import { argsOf, listen, makeError, MODERN_VERSION } from '../helpers/http.js';
+import { MODERN_VERSION, argsOf, listen, makeError } from '../helpers/http.js';
 
 listen({
   port: argsOf().port,

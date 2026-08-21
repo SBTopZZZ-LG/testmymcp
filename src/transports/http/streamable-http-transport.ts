@@ -1,17 +1,18 @@
 import type { Readable } from 'node:stream';
-import type { ProtocolVersion } from '../../core/types/protocol.js';
+
 import { isNotification, isRequest, isResponse } from '../../core/jsonrpc/messages.js';
-import type { Transport, TransportObserver, ListenStream } from '../transport.js';
-import type { AuthConfig } from './types.js';
-import { HTTP_CONTENT_TYPES } from './types.js';
-import { postJson, normalizeHeader, type HttpRequestResult } from './client.js';
+import type { ProtocolVersion } from '../../core/types/protocol.js';
+import type { ListenStream, Transport, TransportObserver } from '../transport.js';
+import { type HttpRequestResult, normalizeHeader, postJson } from './client.js';
 import {
+  type HeaderIssue,
   buildRequestHeaders,
   readJsonResponseHeaders,
   validateJsonResponseHeaders,
-  type HeaderIssue,
 } from './header-routing.js';
 import { SseParser } from './sse.js';
+import type { AuthConfig } from './types.js';
+import { HTTP_CONTENT_TYPES } from './types.js';
 import { buildMcpParamHeaders } from './x-mcp-header.js';
 
 export type StreamableHttpAccept = 'json' | 'sse';
@@ -80,7 +81,8 @@ export class StreamableHttpTransport implements Transport {
   setToolInputSchemas(schemas: Iterable<{ name: string; inputSchema?: unknown }>): void {
     this.toolInputSchemas = new Map();
     for (const tool of schemas) {
-      if (tool.name !== undefined && tool.inputSchema !== undefined) this.toolInputSchemas.set(tool.name, tool.inputSchema);
+      if (tool.name !== undefined && tool.inputSchema !== undefined)
+        this.toolInputSchemas.set(tool.name, tool.inputSchema);
     }
   }
 
@@ -150,7 +152,9 @@ export class StreamableHttpTransport implements Transport {
 
     if (result.statusCode < 200 || result.statusCode >= 300) {
       const text = await readText(result).catch(() => '');
-      this.observer?.onError?.(new Error(`server returned HTTP ${result.statusCode} (${result.statusText})`));
+      this.observer?.onError?.(
+        new Error(`server returned HTTP ${result.statusCode} (${result.statusText})`),
+      );
       throw new Error(
         `server returned HTTP ${result.statusCode} (${result.statusText}): ${text || 'no response body'}`,
       );
@@ -203,7 +207,9 @@ export class StreamableHttpTransport implements Transport {
     this.lastMethod = method;
 
     const isModern = this.options.era === 'modern';
-    const accept = isModern ? `${HTTP_CONTENT_TYPES.JSON}, ${HTTP_CONTENT_TYPES.SSE}` : HTTP_CONTENT_TYPES.JSON;
+    const accept = isModern
+      ? `${HTTP_CONTENT_TYPES.JSON}, ${HTTP_CONTENT_TYPES.SSE}`
+      : HTTP_CONTENT_TYPES.JSON;
     const headers = buildRequestHeaders({
       protocolVersion: this.options.protocolVersion,
       accept,
@@ -235,8 +241,14 @@ export class StreamableHttpTransport implements Transport {
 
         if (result.statusCode < 200 || result.statusCode >= 300) {
           const text = await readText(result).catch(() => '');
-          this.observer?.onError?.(new Error(`server returned HTTP ${result.statusCode} (${result.statusText})`));
-          stream.fail(new Error(`server returned HTTP ${result.statusCode} (${result.statusText}): ${text || 'no response body'}`));
+          this.observer?.onError?.(
+            new Error(`server returned HTTP ${result.statusCode} (${result.statusText})`),
+          );
+          stream.fail(
+            new Error(
+              `server returned HTTP ${result.statusCode} (${result.statusText}): ${text || 'no response body'}`,
+            ),
+          );
           return;
         }
 
@@ -408,7 +420,6 @@ function encodeHeaderValue(value: string): string {
   if (isPlainAscii(value) && !/^=\?base64\?/.test(value)) return value;
   return `=?base64?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 }
-
 
 function readText(result: HttpRequestResult): Promise<string> {
   return result.text();

@@ -1,8 +1,8 @@
-import type { ProtocolEra, ProtocolVersion } from '../core/types/protocol.js';
-import { computeSummary } from '../reporting/summary.js';
-import { createReporter } from '../reporting/index.js';
-import { runTarget, type SessionTarget } from '../sessions/index.js';
 import type { ToolExecutionMode } from '../core/tools/safety.js';
+import type { ProtocolEra, ProtocolVersion } from '../core/types/protocol.js';
+import { createReporter } from '../reporting/index.js';
+import { computeSummary } from '../reporting/summary.js';
+import { type SessionTarget, runTarget } from '../sessions/index.js';
 
 export interface StdioCommandOptions {
   command: string;

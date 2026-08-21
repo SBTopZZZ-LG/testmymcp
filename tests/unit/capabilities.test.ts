@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+
 import {
+  emptyClientCapabilities,
   parseServerCapabilities,
   toClientCapabilitiesJson,
-  emptyClientCapabilities,
 } from '../../src/core/protocol/capabilities.js';
 
 describe('parseServerCapabilities (modern extensions)', () => {
