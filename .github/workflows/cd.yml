@@ -1,0 +1,93 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cd-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release (CD)
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+
+      - name: Read package version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if version already tagged
+        id: tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if git tag --list "v$VERSION" | grep -q .; then
+            echo "v$VERSION already released — skipping CD."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "v$VERSION not released yet."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Collect commits since the previous release
+        id: changelog
+        if: steps.tag.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          PREV=$(git tag --sort=-version:refname | sed "/^v${VERSION}$/d" | head -n 1)
+          if [ -n "$PREV" ]; then
+            RANGE="$PREV..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+          {
+            echo "This release contains $(git rev-list --count "$RANGE") commits:"
+            echo
+            git log --format="- %h %s" "$RANGE"
+          } > release-notes.md
+          echo "previous=$PREV" >> "$GITHUB_OUTPUT"
+          echo "range=$RANGE" >> "$GITHUB_OUTPUT"
+          cat release-notes.md
+
+      - name: Create and push version tag
+        if: steps.tag.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: Build and pack tarball
+        if: steps.tag.outputs.skip == 'false'
+        run: |
+          npm run build
+          npm pack --pack-destination "$RUNNER_TEMP"
+
+      - name: Publish GitHub release
+        if: steps.tag.outputs.skip == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" \
+            --title "testmymcp v$VERSION" \
+            --notes-file release-notes.md \
+            "$RUNNER_TEMP"/testmymcp-"$VERSION".tgz
