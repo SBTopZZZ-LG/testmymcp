@@ -2,6 +2,7 @@
   "name": "testmymcp",
   "version": "0.1.0",
   "description": "A protocol conformance + interoperability + robustness tester for MCP servers (Legacy + Modern eras, all transports).",
+  "author": "SBTopZZZ-LG",
   "type": "module",
   "bin": {
     "testmymcp": "dist/cli/index.js"
