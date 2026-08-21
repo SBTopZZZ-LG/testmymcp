@@ -210,17 +210,20 @@ testmymcp inspect trace.json
 
 ### Shared options
 
-| Option                         | Applies to                  | Description                                                        |
-| ------------------------------ | --------------------------- | ------------------------------------------------------------------ |
-| `--mode <mode>`                | stdio, http, test           | Tool execution policy: `safe`, `readonly`, `all` (default `safe`). |
-| `--level <n>`                  | stdio, http, test           | Highest test level to run, 0–7 (default `3`).                      |
-| `--json`                       | stdio, http, test           | Emit a machine-readable JSON report.                               |
-| `--timeout <ms>`               | all                         | Per-request / overall timeout (default `30000`).                   |
-| `--token <token>`              | http, session create, test  | Bearer token for `Authorization`.                                  |
-| `--env <key=value>`            | stdio, session create, test | Env var for a stdio server child (repeatable).                     |
-| `--era <era>`                  | stdio, http, session create | Protocol era: `legacy` or `modern`.                                |
-| `--protocol-version <version>` | stdio, http, session create | Preferred protocol version.                                        |
-| `--show-secrets`               | stdio, http, test           | Disable redaction of sensitive values in traces.                   |
+| Option                         | Applies to                  | Description                                                                         |
+| ------------------------------ | --------------------------- | ----------------------------------------------------------------------------------- |
+| `--mode <mode>`                | stdio, http, test           | Tool execution policy: `safe`, `readonly`, `all` (default `safe`).                  |
+| `--level <n>`                  | stdio, http, test           | Highest test level to run, 0–7 (default `3`).                                       |
+| `--json`                       | stdio, http, test           | Emit a machine-readable JSON report.                                                |
+| `--json-summary`               | stdio, http, test           | Compact JSON report without embedded per-test payloads (evidence/request/response). |
+| `--timeout <ms>`               | all                         | Per-request / overall timeout (default `30000`).                                    |
+| `--token <token>`              | http, session create, test  | Bearer token for `Authorization`.                                                   |
+| `--env <key=value>`            | stdio, session create, test | Env var for a stdio server child (repeatable).                                      |
+| `--era <era>`                  | stdio, http, session create | Protocol era: `legacy` or `modern`.                                                 |
+| `--protocol-version <version>` | stdio, http, session create | Preferred protocol version.                                                         |
+| `--max-line-size <bytes>`      | stdio, session create       | Maximum server output line size (default `16777216`).                               |
+| `--max-schema-size <bytes>`    | stdio                       | Maximum tool schema size (default `1048576`).                                       |
+| `--show-secrets`               | stdio, http, test           | Disable redaction of sensitive values in traces.                                    |
 
 Run `testmymcp <command> --help` for the full option list.
 
